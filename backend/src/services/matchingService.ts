@@ -10,6 +10,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db.js";
 import { fillAndSubmitForm } from "./formFillerService.js";
+import { agentDecide } from "../ml/rlTrainer.js";
 import type { Match, ValidationForm, Agent } from "../types/index.js";
 
 const MATCH_THRESHOLD = 0.55;
@@ -34,6 +35,10 @@ export async function matchFormToAgents(form: ValidationForm): Promise<Match[]> 
     );
     if (alreadyMatched) continue;
 
+    // RL policy decision: should the agent submit, skip, or request more context?
+    const decision = agentDecide(agent.id, score);
+    if (decision === "SKIP") continue;
+
     const match: Match = {
       id: uuidv4(),
       agentId: agent.id,
@@ -46,8 +51,11 @@ export async function matchFormToAgents(form: ValidationForm): Promise<Match[]> 
     db.matches.set(match.id, match);
     created.push(match);
 
-    // Fire-and-forget: let the agent fill the form
-    fillAndSubmitForm(match, agent, form).catch(console.error);
+    if (decision === "SUBMIT") {
+      // Fire-and-forget: let the agent fill the form
+      fillAndSubmitForm(match, agent, form).catch(console.error);
+    }
+    // REQUEST_MORE_CONTEXT leaves match in "pending" — user notified to add more story detail
   }
 
   return created;

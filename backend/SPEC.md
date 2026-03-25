@@ -246,6 +246,82 @@ Asset: USDC
 
 ---
 
+### Feedback (RL training signal)
+
+| Method | Path                              | Description                                      |
+|--------|-----------------------------------|--------------------------------------------------|
+| POST   | /feedback/:matchId                | Founder records outcome → trains agent's policy  |
+| GET    | /feedback/agent/:agentId/policy   | Get agent's current RL policy stats              |
+
+#### POST /feedback/:matchId
+```json
+// Request
+{ "outcome": "accepted" | "rejected" | "opened" | "no_response" }
+
+// Response
+{
+  "message": "Feedback recorded — agent trained",
+  "outcome": "accepted",
+  "agentPolicy": { "steps": 42, "epsilon": 0.73 }
+}
+```
+
+---
+
+## Machine Learning — Reinforcement Learning Agent
+
+Each AI agent runs a **Deep Q-Network (DQN)** policy that improves with every
+founder feedback signal. Agents train independently, so a user with 5 agents
+develops 5 specialised policies.
+
+### Architecture
+
+```
+State (4 features)           Hidden (16, ReLU)     Q-values (3 actions)
+  relevanceScore    ──┐
+  agentAge (norm)   ──┤── W1 (4×16) + b1 ──ReLU──── W2 (16×3) + b2 ──► SUBMIT
+  successRate       ──┤                                                 ► SKIP
+  formsFilled       ──┘                                             ► REQUEST_MORE_CONTEXT
+```
+
+### Actions
+| Action                | Meaning                                                          |
+|-----------------------|------------------------------------------------------------------|
+| SUBMIT                | Fill and submit the form on the user's behalf                    |
+| SKIP                  | Relevance too low — ignore this form                             |
+| REQUEST_MORE_CONTEXT  | Match is borderline — notify user to enrich their story          |
+
+### Training (DQN)
+- **Reward signal**: +1 accepted, +0.3 opened, 0 no-response, -1 rejected
+- **TD update**: `Q(s,a) ← reward + γ * max_a Q(s', a)`, γ = 0.95
+- **Experience replay**: up to 500 transitions per agent, sampled in batches of 32
+- **Exploration**: ε-greedy starting at ε=1.0, decaying by 0.995 per step → min 0.1
+
+### Flow
+
+```
+Founder posts outcome (accepted/rejected)
+          │
+          ▼
+POST /feedback/:matchId
+          │
+          ▼
+onOutcome() → recordExperience() → trainStep() (online backprop)
+          │
+          ▼
+Agent epsilon decays: explores less, exploits learned policy more
+          │
+          ▼ (next form appears)
+agentDecide() → ε-greedy action selection
+```
+
+### Production upgrade path
+- Replace hand-rolled net with ONNX model served via FastAPI + PyTorch
+- Add embedding-based relevance scoring (cosine similarity on text embeddings)
+- Federated policy — share a base policy across agents, fine-tune per-agent
+
+---
+
 ## Running locally
 
 ```bash

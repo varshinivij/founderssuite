@@ -8,6 +8,7 @@ import agentsRouter from "./routes/agents.js";
 import formsRouter from "./routes/forms.js";
 import matchesRouter from "./routes/matches.js";
 import paymentsRouter from "./routes/payments.js";
+import feedbackRouter from "./routes/feedback.js";
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -27,6 +28,7 @@ app.use("/agents", agentsRouter);
 app.use("/forms", formsRouter);
 app.use("/matches", matchesRouter);
 app.use("/payments", paymentsRouter);
+app.use("/feedback", feedbackRouter);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
