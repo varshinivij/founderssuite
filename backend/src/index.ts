@@ -2,7 +2,9 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
 import { payToCreateAgent } from "./middleware/x402.js";
+import { openApiSpec } from "./openapi.js";
 import usersRouter from "./routes/users.js";
 import agentsRouter from "./routes/agents.js";
 import formsRouter from "./routes/forms.js";
@@ -13,9 +15,13 @@ import feedbackRouter from "./routes/feedback.js";
 const app = express();
 const PORT = process.env.PORT ?? 3001;
 
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false })); // CSP off so Swagger UI loads
 app.use(cors());
 app.use(express.json());
+
+// ── API Docs ──────────────────────────────────────────────────────────────────
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+app.get("/openapi.json", (_req, res) => res.json(openApiSpec));
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
