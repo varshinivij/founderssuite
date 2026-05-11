@@ -1,0 +1,42 @@
+WIREFRAME: https://www.figma.com/design/AJgNlHuMGDdZxQslogUahD/fs-wireframes
+WHAT ARE WE BUILDING
+
+–  End-to-end feedback flow that enables quality matches, community feed, insights, and summary reports.
+–  Machine Learning driven recommendation algorithm: Matches founders with target users based on customer-discovery needs and users' lived experience, rather than demographics.
+–  Core infrastructure
+    –  Fine-tuning Large Language Models (LLM) for natural language processing
+    –  Developing a Singular Value Decomposition (SVD) recommendation algorithm with domain-specific considerations
+       –  Example: validating a biotech product requires testers with specialized knowledge (e.g., regulatory awareness), whereas a vehicle device company needs users with hands-on experience (e.g., usage context). The model must weight expertise and context differently rather than treating all users the same.
+    –  Initial data pulled from public source repositories such as Kaggle
+–  AI powered insights: Key findings extracted from validation interviews
+    –  Nudges to founders on biased or leading questions
+    –  Post-interview generated summary reports with actionable steps
+
+KEY ADVANTAGE:
+–  Current systems primarily rely on demographic filtering (such as problem domain and price range) rather than deeper contextual matching
+–  Focus on relevant, experience-based users rather than broad, generic pools
+–  Founder generates more data about their product with time, which enhances matching precision and scalability
+–  Competitors cannot easily replicate the model because it depends on proprietary data, continuous feedback loops, and domain-specific model tuning that compound over time
+
+
+Miguel:
+1. Build the AI model API endpoints that support experience-based matching and feedback flows.
+2. Pull and prepare data from the database (Supabase or Google Cloud) for recommendation and interview insights.
+3. Design the recommendation API and data contract around customer-discovery needs, lived experience, and domain-specific matching.
+
+
+Braden
+1. Follow the videos and wireframe closely to implement the matching and community feed experience.
+2. Coordinate with Miguel on API endpoint design and integration requirements.
+3. Own deployment setup and ensure the app is production-ready (w/ Vercel)
+
+Sanjay
+1. Lead NLP work for processing interview text, extracting insights, and generating summary reports.
+2. Build models and pipelines that flag biased or leading questions and surface actionable interview findings.
+3. Support the AI recommendation work with domain-specific language understanding.
+4. Create your own feature (pass it by Varshini) that creates an AI agent per user/customer and autonomously fills surveys on their behalf, whenever there is a suitable match. This should be on the "AI marketplace side", the frontend should look similar to the human marketplace. Reference wireframe and demo videos.
+
+Aarav
+1. Create a practical demo with dummy data that shows matching, feedback, and summary report flows.
+2. Do integration across API, frontend, and AI components.
+3. Write or perform tests to ensure the end-to-end experience works and the system integrates cleanly.
