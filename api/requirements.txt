@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+livekit
+httpx
+python-dotenv
+supabase
+sentence-transformers
+pinecone
+browser-use
+playwright
