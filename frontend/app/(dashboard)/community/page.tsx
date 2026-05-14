@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { ChevronDown, ChevronUp, Plus, Search } from "lucide-react";
 import { mockCommunityPosts } from "@/lib/mock-data";
 import { CommunityPostCard } from "@/components/community/CommunityPostCard";
@@ -115,41 +113,6 @@ export default function CommunityPage() {
           </button>
         </div>
       </div>
-
-      <footer className="mt-12 border-t border-violet-950/20 bg-[#1a0f2e] px-6 py-12 text-white">
-        <div className="mx-auto flex max-w-4xl flex-col items-center justify-between gap-8 sm:flex-row sm:items-start">
-          <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="FoundersSuite" width={36} height={36} className="rounded-lg" />
-            <span className="text-lg font-extrabold tracking-tight">FoundersSuite</span>
-          </div>
-          <div className="flex flex-wrap justify-center gap-8 text-sm font-medium">
-            <Link href="/agents" className="text-white/85 transition hover:text-white">
-              Learn more
-            </Link>
-            <a href="mailto:support@founderssuite.ai" className="text-white/85 transition hover:text-white">
-              Support
-            </a>
-          </div>
-          <div className="flex items-center gap-5 text-white/80">
-            <span className="sr-only">Social</span>
-            <a href="#" className="transition hover:text-white" aria-label="Instagram">
-              <svg className="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 5a5 5 0 100 10 5 5 0 000-10zm6.5-.75a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM12 9a3 3 0 110 6 3 3 0 010-6z" />
-              </svg>
-            </a>
-            <a href="#" className="transition hover:text-white" aria-label="LinkedIn">
-              <svg className="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M6.5 8.5h2V19h-2V8.5zm1-3.25a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM9.75 8.5H12v2.8h.05c.35-.65 1.2-1.35 2.45-1.35 2.6 0 3.1 1.7 3.1 3.9V19h-2v-5.2c0-1.25-.02-2.85-1.75-2.85-1.75 0-2 1.35-2 2.75V19h-2V8.5z" />
-              </svg>
-            </a>
-            <a href="#" className="transition hover:text-white" aria-label="X">
-              <svg className="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M4 4l7.2 9.6L4 20h2.4l5.6-6.08L16.8 20H20l-7.6-10.1L19.2 4h-2.4l-5 6.72L7.4 4H4z" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      </footer>
 
       {showTop ? (
         <button

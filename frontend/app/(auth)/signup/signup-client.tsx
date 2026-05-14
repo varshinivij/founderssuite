@@ -30,25 +30,25 @@ export default function SignupClient({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-extrabold">Create your account</h2>
-        <p className="mt-1 text-sm text-neutral-text-gray">
-          Sign up to start matching and validating.
-        </p>
+        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
+          Create your account
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">Sign up to start matching and validating.</p>
       </div>
 
       <div className="space-y-2">
-        <Label>Role</Label>
+        <Label className="text-slate-700">Role</Label>
         <Tabs value={role} onValueChange={(v) => setRole(v as "founder" | "tester")}>
-          <TabsList className="bg-bg-card/50 border border-divider rounded-full p-1">
+          <TabsList className="grid w-full grid-cols-2 rounded-full border border-violet-200 bg-violet-50/90 p-1">
             <TabsTrigger
               value="founder"
-              className="rounded-full data-[state=active]:bg-purple"
+              className="rounded-full text-slate-600 data-[state=active]:bg-[#8b5cf6] data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               Founder
             </TabsTrigger>
             <TabsTrigger
               value="tester"
-              className="rounded-full data-[state=active]:bg-purple"
+              className="rounded-full text-slate-600 data-[state=active]:bg-[#8b5cf6] data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               Tester
             </TabsTrigger>
@@ -58,7 +58,9 @@ export default function SignupClient({
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
+          <Label htmlFor="name" className="text-slate-700">
+            Name
+          </Label>
           <Input
             id="name"
             value={name}
@@ -67,7 +69,9 @@ export default function SignupClient({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-slate-700">
+            Email
+          </Label>
           <Input
             id="email"
             value={email}
@@ -76,7 +80,9 @@ export default function SignupClient({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" className="text-slate-700">
+            Password
+          </Label>
           <Input
             id="password"
             type="password"
@@ -88,7 +94,7 @@ export default function SignupClient({
       </div>
 
       <Button
-        className="w-full bg-purple hover:bg-purple-mid"
+        className="h-10 w-full bg-[#8b5cf6] text-white hover:bg-[#7c3aed]"
         disabled={!email || !name || password.length < 4 || isSubmitting}
         onClick={async () => {
           setIsSubmitting(true);

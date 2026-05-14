@@ -5,9 +5,19 @@ interface MatchCircleProps {
   size?: number; // default 80
   /** When set, overrides traffic-light ring color (e.g. landing demo). */
   progressStroke?: string;
+  /** Background track stroke (default dark zinc). */
+  trackStroke?: string;
+  /** Inner fill behind the progress arc. */
+  inactiveFill?: string;
 }
 
-export function MatchCircle({ score, size = 80, progressStroke }: MatchCircleProps) {
+export function MatchCircle({
+  score,
+  size = 80,
+  progressStroke,
+  trackStroke = "#27272a",
+  inactiveFill = "rgba(139, 92, 246, 0.1)",
+}: MatchCircleProps) {
   const pct = Math.round(score * 100);
   const radius = (size - 12) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -26,8 +36,8 @@ export function MatchCircle({ score, size = 80, progressStroke }: MatchCirclePro
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          fill="rgba(139, 92, 246, 0.1)"
-          stroke="#27272a"
+          fill={inactiveFill}
+          stroke={trackStroke}
           strokeWidth={8}
         />
         <circle

@@ -19,15 +19,15 @@ export default function LoginPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-extrabold">Log in</h2>
-        <p className="mt-1 text-sm text-neutral-text-gray">
-          Welcome back.
-        </p>
+        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Log in</h2>
+        <p className="mt-1 text-sm text-slate-600">Welcome back.</p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-slate-700">
+            Email
+          </Label>
           <Input
             id="email"
             value={email}
@@ -36,7 +36,9 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" className="text-slate-700">
+            Password
+          </Label>
           <Input
             id="password"
             type="password"
@@ -48,7 +50,7 @@ export default function LoginPage() {
       </div>
 
       <Button
-        className="w-full bg-purple hover:bg-purple-mid"
+        className="h-10 w-full bg-[#8b5cf6] text-white hover:bg-[#7c3aed]"
         disabled={!email || password.length < 4 || isSubmitting}
         onClick={async () => {
           setIsSubmitting(true);

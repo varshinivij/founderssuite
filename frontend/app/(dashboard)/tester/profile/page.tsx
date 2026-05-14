@@ -52,8 +52,8 @@ export default function TesterProfilePage() {
   return (
     <div className="space-y-6">
       {/* top band */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm">
-        <div className="h-28 bg-[linear-gradient(180deg,rgba(139,92,246,0.22)_0%,rgba(255,255,255,0)_100%)]" />
+      <div className="relative overflow-hidden rounded-3xl border border-[#dcd4ef] bg-[#f3f0f7] shadow-sm ring-1 ring-[#e8dff6]/80">
+        <div className="h-28 bg-[linear-gradient(180deg,rgba(252,231,131,0.55)_0%,rgba(232,223,246,0.95)_45%,rgba(255,255,255,0)_100%)]" />
         <div className="px-6 pb-6">
           <div className="-mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="flex items-end gap-4">

@@ -1,7 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { DollarSign, FileCheck, Star } from "lucide-react";
 import { mockMatches } from "@/lib/mock-data";
+import { getTesterCompanyProfile } from "@/lib/tester-company-profiles";
+import { MatchCircle } from "@/components/shared/MatchCircle";
 
 export default function TesterMatchesPage() {
   const [filter, setFilter] = useState("All Matches");
@@ -11,9 +15,13 @@ export default function TesterMatchesPage() {
   const rows = useMemo(() => {
     const base = mockMatches
       .filter((m) => m.status === "pending" || m.status === "accepted")
-      .map((m, idx) => ({
+      .map((m, idx) => {
+        const formId = m.form?.id ?? `form_${(idx % 6) + 1}`;
+        const brand = getTesterCompanyProfile(formId);
+        return {
         id: m.id,
-        company: m.form?.title ?? ["FreshBasket", "HealthTrack", "EduLearn"][idx % 3],
+        formId,
+        company: brand?.displayName ?? m.form?.title ?? "Company",
         subtitle: m.form?.stage ?? ["Website Beta Test", "Mobile App User Testing", "Interactive Learning Feedback"][idx % 3],
         matchPct: Math.round(m.score * 100),
         minScore: (m.tester?.qualityScore ?? 4.0) as number,
@@ -22,7 +30,8 @@ export default function TesterMatchesPage() {
         payType: idx % 2 === 0 ? "Flat Rate" : "Hourly",
         tags: ["Problem Validation", "Concept Prototyping", "Beta Testing", "UX", "US, UK"].slice(0, 4),
         status: m.status,
-      }));
+      };
+      });
 
     return base;
   }, []);
@@ -40,15 +49,15 @@ export default function TesterMatchesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
         <div>
-          <div className="text-[11px] uppercase tracking-widest text-slate-600 font-semibold">
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-[#6b5f80]">
             Filter
           </div>
-          <div className="mt-2 h-11 rounded-full border border-slate-200 bg-white px-4 flex items-center justify-between">
-            <div className="text-sm font-medium text-slate-900">{filter}</div>
+          <div className="mt-2 flex h-11 items-center justify-between rounded-full border border-[#dcd4ef] bg-[#f7f4fc] px-4">
+            <div className="text-sm font-medium text-[#2d1b4e]">{filter}</div>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="bg-transparent text-sm text-slate-600 outline-none"
+              className="bg-transparent text-sm text-[#5c4d75] outline-none"
             >
               <option>All Matches</option>
               <option>Pending</option>
@@ -57,15 +66,15 @@ export default function TesterMatchesPage() {
           </div>
         </div>
         <div>
-          <div className="text-[11px] uppercase tracking-widest text-slate-600 font-semibold">
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-[#6b5f80]">
             Domain
           </div>
-          <div className="mt-2 h-11 rounded-full border border-slate-200 bg-white px-4 flex items-center justify-between">
-            <div className="text-sm font-medium text-slate-900">{domain}</div>
+          <div className="mt-2 flex h-11 items-center justify-between rounded-full border border-[#dcd4ef] bg-[#f7f4fc] px-4">
+            <div className="text-sm font-medium text-[#2d1b4e]">{domain}</div>
             <select
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
-              className="bg-transparent text-sm text-slate-600 outline-none"
+              className="bg-transparent text-sm text-[#5c4d75] outline-none"
             >
               <option>All Domains</option>
               <option>FinTech</option>
@@ -75,15 +84,15 @@ export default function TesterMatchesPage() {
           </div>
         </div>
         <div>
-          <div className="text-[11px] uppercase tracking-widest text-slate-600 font-semibold">
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-[#6b5f80]">
             Sort
           </div>
-          <div className="mt-2 h-11 rounded-full border border-slate-200 bg-white px-4 flex items-center justify-between">
-            <div className="text-sm font-medium text-slate-900">{sort}</div>
+          <div className="mt-2 flex h-11 items-center justify-between rounded-full border border-[#dcd4ef] bg-[#f7f4fc] px-4">
+            <div className="text-sm font-medium text-[#2d1b4e]">{sort}</div>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="bg-transparent text-sm text-slate-600 outline-none"
+              className="bg-transparent text-sm text-[#5c4d75] outline-none"
             >
               <option>Match Score</option>
               <option>Newest</option>
@@ -93,7 +102,7 @@ export default function TesterMatchesPage() {
         </div>
       </div>
 
-      <div className="text-[11px] uppercase tracking-widest text-slate-600 font-semibold">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-[#6b5f80]">
         {rows.length} matches in queue
       </div>
 
@@ -101,34 +110,62 @@ export default function TesterMatchesPage() {
         {rows.slice(0, 3).map((r) => (
           <div
             key={r.id}
-            className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm"
+            className="overflow-hidden rounded-3xl border border-[#dcd4ef] bg-[#f3f0f7] shadow-[0_12px_40px_rgba(45,27,78,0.08)] ring-1 ring-[#e8dff6]/80"
           >
-            <div className="p-6 grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-6 items-center">
+            <div className="grid grid-cols-1 items-center gap-6 p-6 lg:grid-cols-[1fr_200px]">
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-xs font-extrabold text-violet-900">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#c9b8e8] bg-[#e8dff6] text-xs font-extrabold text-[#2d1b4e]">
                     {r.company.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <div className="font-extrabold text-slate-900">{r.company}</div>
-                    <div className="text-sm text-slate-600">{r.subtitle}</div>
+                    <div className="font-extrabold text-[#2d1b4e]">{r.company}</div>
+                    <div className="text-sm text-[#5c4d75]">{r.subtitle}</div>
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
                   {[
-                    { label: "Min. Score", value: `★ ${r.minScore.toFixed(1)}` },
-                    { label: "Launch Stage", value: r.stage },
-                    { label: r.payType, value: r.rate },
+                    {
+                      label: "Quality score",
+                      node: (
+                        <>
+                          <Star className="h-3.5 w-3.5 fill-[#c4b5fd] text-[#6d28d9]" />
+                          <span className="text-lg font-extrabold text-[#2d1b4e]">
+                            {r.minScore.toFixed(1)}
+                          </span>
+                        </>
+                      ),
+                    },
+                    {
+                      label: "Launch stage",
+                      node: (
+                        <>
+                          <FileCheck className="h-3.5 w-3.5 text-[#6d28d9]" />
+                          <span className="text-sm font-extrabold leading-tight text-[#2d1b4e]">
+                            {r.stage}
+                          </span>
+                        </>
+                      ),
+                    },
+                    {
+                      label: r.payType,
+                      node: (
+                        <>
+                          <DollarSign className="h-3.5 w-3.5 text-[#6d28d9]" />
+                          <span className="text-lg font-extrabold text-[#2d1b4e]">{r.rate}</span>
+                        </>
+                      ),
+                    },
                   ].map((m) => (
                     <div
                       key={m.label}
-                      className="rounded-2xl border border-violet-100 bg-violet-50/80 p-4"
+                      className="rounded-2xl border border-[#d4c4ec] bg-[#e6dff1] px-2 py-3 text-center shadow-sm sm:px-3"
                     >
-                      <div className="text-lg font-extrabold text-violet-900">
-                        {m.value}
+                      <div className="mb-1 flex items-center justify-center gap-1">{m.node}</div>
+                      <div className="text-[10px] font-medium uppercase tracking-wide text-[#5c4d75]">
+                        {m.label}
                       </div>
-                      <div className="text-xs text-slate-600">{m.label}</div>
                     </div>
                   ))}
                 </div>
@@ -137,32 +174,44 @@ export default function TesterMatchesPage() {
                   {r.tags.map((t) => (
                     <span
                       key={t}
-                      className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-600"
+                      className="rounded-full border border-[#c4b5fd] bg-[#f7f4fc] px-3 py-1 text-xs font-medium text-[#4c1d95]"
                     >
                       {t}
                     </span>
                   ))}
                 </div>
 
-                <div className="mt-5 flex items-center gap-3">
-                  <button className="px-4 py-2 rounded-full border border-slate-200 bg-white text-sm font-semibold hover:bg-black/5 transition">
-                    View Company Profile
-                  </button>
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/tester/company/${r.formId}`}
+                    className="rounded-full border-2 border-[#8b5cf6] bg-white px-4 py-2 text-sm font-semibold text-[#5b21b6] shadow-sm transition hover:bg-[#faf8ff]"
+                  >
+                    View company profile
+                  </Link>
                 </div>
               </div>
 
               <div className="flex flex-col items-center gap-4">
-                <div className="h-28 w-28 rounded-full bg-[#2d1b4e] text-white flex items-center justify-center border-[6px] border-[#c084fc]/30 shadow-[0_20px_60px_rgba(61,20,84,0.18)]">
-                  <div className="text-center">
-                    <div className="text-3xl font-extrabold">{r.matchPct}%</div>
-                    <div className="text-sm opacity-80 -mt-1">Match</div>
-                  </div>
+                <div className="rounded-full bg-[#2d1b4e] p-3 shadow-[0_12px_40px_rgba(45,27,78,0.3)] ring-2 ring-[#f4d43a]/50 ring-offset-2 ring-offset-[#f3f0f7]">
+                  <MatchCircle
+                    score={r.matchPct / 100}
+                    size={104}
+                    progressStroke="#f4d43a"
+                    trackStroke="#4a3563"
+                    inactiveFill="rgba(45, 27, 78, 0.45)"
+                  />
                 </div>
-                <div className="flex items-center gap-3">
-                  <button className="px-5 py-2 rounded-full border border-slate-200 bg-white text-sm font-semibold hover:bg-black/5 transition">
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    className="rounded-full border border-[#f0b4b8] bg-white px-5 py-2 text-sm font-semibold text-[#2d1b4e] transition hover:bg-[#fff5f5]"
+                  >
                     ✕ Decline
                   </button>
-                  <button className="px-5 py-2 rounded-full bg-[#f7d9c4] text-slate-900 text-sm font-semibold border border-slate-200 hover:bg-[#f2cdb7] transition">
+                  <button
+                    type="button"
+                    className="rounded-full border border-[#d4a574]/50 bg-gradient-to-r from-[#fef6c3] via-[#fce8a6] to-[#e8c9a0] px-5 py-2 text-sm font-semibold text-[#2d1b4e] shadow-[0_6px_20px_rgba(234,179,8,0.22)] transition hover:brightness-[1.03]"
+                  >
                     ✓ Accept
                   </button>
                 </div>

@@ -9,7 +9,6 @@ import { SocialProof } from "@/components/landing/SocialProof";
 import { CommunityStats } from "@/components/landing/CommunityStats";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { FAQSection } from "@/components/landing/FAQSection";
-import { LandingFooter } from "@/components/landing/LandingFooter";
 
 const ROLE_STORAGE_KEY = "fs_landing_role";
 
@@ -113,7 +112,6 @@ export default function LandingPage() {
         <CommunityStats />
         <PricingSection />
         <FAQSection />
-        <LandingFooter />
       </div>
     </main>
   );
