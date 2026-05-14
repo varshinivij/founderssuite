@@ -41,6 +41,15 @@ export interface TesterProfile extends User {
   previousCompany?: string | null;
   isTopVoice?: boolean;
   tags?: string[];
+  /** Same pravatar `img` ids as the landing world map (`lib/landing-pravatar`). */
+  pravatarImgId?: number;
+  pronouns?: string;
+  /** One line under the name, e.g. role + focus areas */
+  professionalHeadline?: string;
+  tooling?: string[];
+  /** How they run sessions (think-aloud, repro steps, etc.) */
+  methodology?: string;
+  certifications?: string[];
 }
 
 // ─── Stories & Agents ──────────────────────────────

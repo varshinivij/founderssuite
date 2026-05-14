@@ -6,6 +6,7 @@ import { DollarSign, FileCheck, Star } from "lucide-react";
 import { mockMatches } from "@/lib/mock-data";
 import { getTesterCompanyProfile } from "@/lib/tester-company-profiles";
 import { MatchCircle } from "@/components/shared/MatchCircle";
+import { TesterCompanyLogoMark } from "@/components/tester/TesterCompanyLogoMark";
 
 export default function TesterMatchesPage() {
   const [filter, setFilter] = useState("All Matches");
@@ -22,6 +23,8 @@ export default function TesterMatchesPage() {
         id: m.id,
         formId,
         company: brand?.displayName ?? m.form?.title ?? "Company",
+        logoEmoji: brand?.logoEmoji ?? "🏢",
+        logoLabel: brand?.logoLabel ?? (m.form?.title ?? "Co").slice(0, 2).toUpperCase(),
         subtitle: m.form?.stage ?? ["Website Beta Test", "Mobile App User Testing", "Interactive Learning Feedback"][idx % 3],
         matchPct: Math.round(m.score * 100),
         minScore: (m.tester?.qualityScore ?? 4.0) as number,
@@ -115,9 +118,11 @@ export default function TesterMatchesPage() {
             <div className="grid grid-cols-1 items-center gap-6 p-6 lg:grid-cols-[1fr_200px]">
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#c9b8e8] bg-[#e8dff6] text-xs font-extrabold text-[#2d1b4e]">
-                    {r.company.slice(0, 2).toUpperCase()}
-                  </div>
+                  <TesterCompanyLogoMark
+                    emoji={r.logoEmoji}
+                    label={r.logoLabel}
+                    size="compact"
+                  />
                   <div>
                     <div className="font-extrabold text-[#2d1b4e]">{r.company}</div>
                     <div className="text-sm text-[#5c4d75]">{r.subtitle}</div>

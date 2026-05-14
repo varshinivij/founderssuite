@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import type { TesterCompanyProfile } from "@/lib/tester-company-profiles";
+import { TesterCompanyLogoMark } from "@/components/tester/TesterCompanyLogoMark";
 
 function StatIcon({ kind }: { kind: "users" | "dollar" | "check" }) {
   const cls = "h-5 w-5 text-[#6d28d9]";
@@ -34,14 +35,11 @@ export default function TesterCompanyProfileView({ profile }: { profile: TesterC
       <section className="rounded-3xl bg-[#ebe8f4] px-6 py-10 shadow-sm ring-1 ring-[#dcd4ef]/80 md:px-10 md:py-12">
         <div className="mx-auto flex max-w-5xl flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
           <div className="flex shrink-0 flex-col items-center gap-4 sm:flex-row sm:items-start lg:flex-col lg:items-center">
-            <div className="flex h-28 w-28 flex-col items-center justify-center rounded-2xl border border-[#e0d8f0] bg-white shadow-md sm:h-32 sm:w-32">
-              <span className="text-4xl leading-none" aria-hidden>
-                {profile.logoEmoji}
-              </span>
-              <span className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#5c4d75]">
-                {profile.logoLabel}
-              </span>
-            </div>
+            <TesterCompanyLogoMark
+              emoji={profile.logoEmoji}
+              label={profile.logoLabel}
+              size="hero"
+            />
           </div>
 
           <div className="min-w-0 flex-1 space-y-5">

@@ -52,7 +52,7 @@ export const mockTesterProfiles: TesterProfile[] = [
     livedExperience: "Former clinical ops lead; led device trials and IRB workflows.",
     skills: ["Clinical Ops", "Regulatory", "User Research"],
     hourlyRate: 85,
-    availability: "Weeknights",
+    availability: "Weeknights (after 6pm PT) · ~6 hrs/week for structured sessions",
     timezone: "PT",
     testingTypes: ["interview", "survey"],
     platformPreferences: ["web"],
@@ -62,7 +62,25 @@ export const mockTesterProfiles: TesterProfile[] = [
     previousCompany: "AudioNova",
     isTopVoice: true,
     tags: ["Clinical Ops", "Regulatory", "User Research"],
-    bio: "I help teams validate workflows with real constraints.",
+    pravatarImgId: 27,
+    pronouns: "She/Her",
+    professionalHeadline: "Clinical ops · HIPAA-aware · EHR-adjacent workflows",
+    tooling: [
+      "Figma",
+      "Maze",
+      "Postman",
+      "Lookback",
+      "Metabase",
+      "Google Docs / Sheets",
+      "Loom",
+    ],
+    methodology:
+      "I run scenario-based walkthroughs with think-aloud, then tighten into repro steps with severity and impact. For regulated products I map controls (permissions, audit trails, PHI boundaries) to what founders actually ship—not checklist theater. I always leave founders with a prioritized punch list: blockers vs polish.",
+    certifications: [
+      "HIPAA awareness (annual, org)",
+      "GCP — Social & Behavioral (NIH, renewing)",
+    ],
+    bio: "I help teams validate workflows under real clinical constraints—not slide-deck hypotheticals. Recent focus: onboarding clinicians to revenue-cycle tools, consent flows for patient-facing apps, and admin tooling where a wrong click becomes a compliance incident.\n\nBefore consulting I owned release readiness for a Class II adjacent SaaS pilot: IRB packets, training decks, and field notes from 40+ moderated sessions. I care about defensible evidence for PMs and design partners.",
   },
   {
     id: "tester_2",
@@ -85,6 +103,12 @@ export const mockTesterProfiles: TesterProfile[] = [
     isTopVoice: false,
     tags: ["Sales Ops", "GTM", "Pricing"],
     bio: "I focus on clarity, packaging, and sales motion fit.",
+    pravatarImgId: 12,
+    pronouns: "They/Them",
+    professionalHeadline: "RevOps · CPQ & CRM hygiene · PLG + sales-led",
+    tooling: ["Salesforce", "HubSpot", "Notion", "Figma", "Sheets"],
+    methodology:
+      "I stress-test positioning and packaging against how reps actually explain the product on calls. Beta sessions include scripted tasks plus open exploration of pricing pages and upgrade paths.",
   },
   {
     id: "tester_3",
@@ -107,6 +131,12 @@ export const mockTesterProfiles: TesterProfile[] = [
     isTopVoice: true,
     tags: ["Curriculum", "Procurement", "UX Feedback"],
     bio: "I love stress-testing flows against real classroom realities.",
+    pravatarImgId: 32,
+    pronouns: "She/Her",
+    professionalHeadline: "District LMS rollouts · procurement realities",
+    tooling: ["Google Classroom", "Canvas", "Miro", "Zoom"],
+    methodology:
+      "Sessions mirror school-day interruptions: partial attention, shared devices, and admin vs teacher mental models. I document where flows assume ideal conditions.",
   },
   {
     id: "tester_4",
@@ -129,6 +159,12 @@ export const mockTesterProfiles: TesterProfile[] = [
     isTopVoice: false,
     tags: ["Payments", "Risk", "Compliance"],
     bio: "I’ll call out hidden compliance + risk gotchas early.",
+    pravatarImgId: 45,
+    pronouns: "He/Him",
+    professionalHeadline: "Payments · fraud signals · ledger edge cases",
+    tooling: ["Postman", "Datadog", "dbt docs", "Notion"],
+    methodology:
+      "I combine API-level checks with user journeys: money movement, idempotency, and disclosure copy. I flag where UX masks risk the compliance team will care about later.",
   },
   {
     id: "tester_5",
@@ -151,11 +187,18 @@ export const mockTesterProfiles: TesterProfile[] = [
     isTopVoice: false,
     tags: ["Field Ops", "Hardware", "Installation"],
     bio: "I’m great at finding edge cases in the real world.",
+    pravatarImgId: 16,
+    pronouns: "She/Her",
+    professionalHeadline: "Fleet deployments · field reliability",
+    tooling: ["Android", "TestFlight", "Sheets", "Loom"],
+    methodology:
+      "Hardware + app pairing tests with weak network and glove-on interactions. I log environmental failure modes (vibration, sunlight, mount positions).",
   },
   // 7 more testers (shorter)
   ...Array.from({ length: 7 }).map((_, i) => {
     const idx = i + 6;
     const domains: Domain[] = ["SaaS", "MedTech", "EdTech", "FinTech", "Other"];
+    const pinIds = [12, 32, 45, 16, 27, 68, 11, 59, 33] as const;
     return {
       id: `tester_${idx}`,
       email: `tester${idx}@example.com`,
@@ -177,6 +220,7 @@ export const mockTesterProfiles: TesterProfile[] = [
       isTopVoice: i % 5 === 0,
       tags: ["Research", "Communication", "Domain Knowledge"],
       bio: "I give crisp, structured feedback.",
+      pravatarImgId: pinIds[i % pinIds.length],
     } satisfies TesterProfile;
   }),
 ];

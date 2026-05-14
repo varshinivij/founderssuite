@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Star } from "lucide-react";
+import { LANDING_MAP_AVATAR_PINS, pravatarUrl } from "@/lib/landing-pravatar";
 
 /** Equirectangular projection → % positions for overlay (matches Wikimedia map viewBox 950×620). */
 function geoToStyle(lon: number, lat: number) {
@@ -15,18 +16,6 @@ function geoToStyle(lon: number, lat: number) {
 }
 
 const MAP_SRC = "/landing/world-map-low-resolution.svg";
-
-const AVATAR_PINS = [
-  { lon: -122.4, lat: 37.8, img: "https://i.pravatar.cc/128?img=12" },
-  { lon: -74.0, lat: 40.7, img: "https://i.pravatar.cc/128?img=32" },
-  { lon: -46.6, lat: -23.5, img: "https://i.pravatar.cc/128?img=45" },
-  { lon: 2.35, lat: 48.86, img: "https://i.pravatar.cc/128?img=16" },
-  { lon: -0.13, lat: 51.5, img: "https://i.pravatar.cc/128?img=27" },
-  { lon: 3.4, lat: 6.5, img: "https://i.pravatar.cc/128?img=68" },
-  { lon: 139.65, lat: 35.68, img: "https://i.pravatar.cc/128?img=11" },
-  { lon: 103.82, lat: 1.35, img: "https://i.pravatar.cc/128?img=59" },
-  { lon: 151.2, lat: -33.87, img: "https://i.pravatar.cc/128?img=33" },
-] as const;
 
 function WorldMap() {
   return (
@@ -42,7 +31,7 @@ function WorldMap() {
           priority={false}
         />
 
-        {AVATAR_PINS.map((p, i) => (
+        {LANDING_MAP_AVATAR_PINS.map((p, i) => (
           <div
             key={i}
             className="absolute z-10 size-10 overflow-hidden rounded-full bg-[#f5f0ff] shadow-[0_8px_24px_rgba(139,92,246,0.3)] ring-2 ring-[#8b5cf6] ring-offset-2 ring-offset-white sm:size-11"
@@ -50,7 +39,7 @@ function WorldMap() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- remote avatars; pravatar does not need optimization */}
             <img
-              src={p.img}
+              src={pravatarUrl(p.imgId, 128)}
               alt=""
               width={44}
               height={44}

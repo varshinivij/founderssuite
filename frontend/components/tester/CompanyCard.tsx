@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { DollarSign, Eye, FileCheck, Star } from "lucide-react";
 import { MatchCircle } from "@/components/shared/MatchCircle";
+import { TesterCompanyLogoMark } from "@/components/tester/TesterCompanyLogoMark";
 import { getTesterCompanyProfile } from "@/lib/tester-company-profiles";
 import type { ValidationForm } from "@/types";
 
@@ -41,9 +42,11 @@ export function CompanyCard({
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_min(200px,42%)]">
         <div className="min-w-0 space-y-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#c9b8e8] bg-[#e8dff6] shadow-sm">
-              <span className="text-sm font-bold tracking-tight text-[#2d1b4e]">{initials}</span>
-            </div>
+            <TesterCompanyLogoMark
+              emoji={brand?.logoEmoji ?? "🏢"}
+              label={brand?.logoLabel ?? initials}
+              size="row"
+            />
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-bold tracking-tight text-[#2d1b4e] md:text-2xl">{headline}</h2>
               {form.title !== headline ? (

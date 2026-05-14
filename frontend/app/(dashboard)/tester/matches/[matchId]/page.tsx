@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { mockMatches } from "@/lib/mock-data";
+import { getTesterCompanyProfile } from "@/lib/tester-company-profiles";
+import { TesterCompanyLogoMark } from "@/components/tester/TesterCompanyLogoMark";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -23,17 +25,31 @@ export default function TesterMatchDetailPage() {
   }
 
   const form = match.form;
+  const brand = getTesterCompanyProfile(match.formId);
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
-            {form.title}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {form.stage ?? "—"} • ${form.compensation ?? 0}
-          </p>
+        <div className="flex min-w-0 items-start gap-4">
+          <TesterCompanyLogoMark
+            emoji={brand?.logoEmoji ?? "🏢"}
+            label={brand?.logoLabel ?? form.title.slice(0, 2).toUpperCase()}
+            size="row"
+          />
+          <div className="min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
+              {form.title}
+            </h1>
+            <p className="mt-1 text-sm text-slate-600">
+              {brand?.displayName ? (
+                <>
+                  <span className="font-medium text-slate-800">{brand.displayName}</span>
+                  <span className="text-slate-400"> · </span>
+                </>
+              ) : null}
+              {form.stage ?? "—"} • ${form.compensation ?? 0}
+            </p>
+          </div>
         </div>
         <Badge className="border border-slate-200 bg-slate-100 capitalize text-slate-700">
           {status}
