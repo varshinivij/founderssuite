@@ -230,34 +230,36 @@ Now that you have an agent and submissions, the dashboard is populated:
 
 Click **Interview Suite** in the top nav → click **Simulator** from the dropdown (or go to http://localhost:3000/simulator)
 
-**Choose a persona:** Click **Sam-v3** — VP Ops at a mid-market logistics company, ROI/implementation focused. Best match for a B2B SaaS ops problem.
+The page has three columns:
 
-Before starting, set the interview context in the right panel:
+- **Left sidebar** — persona picker. Top section is **Custom target** (name, domains, profile fields + **Use** button). Below it are the 6 preset persona cards.
+- **Center** — chat area. Shows a "Rehearse before the real interview" placeholder until you start, then the turn-by-turn conversation + question input at the bottom.
+- **Right panel** — live coaching (read-only). Updates automatically as the conversation progresses — nothing to fill in here.
 
-| Field | Input |
-|---|---|
-| Objective | `Validate whether ops managers manually track customer handoffs and would pay to automate it` |
-| Target customer | `Revenue ops or CS leads at B2B SaaS companies with a dedicated sales team` |
-| Hypothesis | `Manual handoffs between sales and CS cause measurable revenue leakage` |
-| Success criteria | `Interviewee describes a real incident where a missed handoff lost a deal or churned a customer` |
-| Avoid topics | `Pricing, competitor tool names` |
+**Pick a persona from the left sidebar:** Click **Sam-v3** — VP Ops at a mid-market logistics company, ROI/implementation focused. The card highlights when selected.
 
-Click **Start with Sam-v3**.
+> Alternatively, fill in the **Custom target** section at the top of the left sidebar:
+> - Persona name: `Sarah, Head of RevOps`
+> - Domains: `b2b saas, revenue ops`
+> - Profile: `Runs ops for a 50-person SaaS company. Owns the handoff process between AEs and CSMs. Skeptical of new tools unless ROI is proven fast.`
+> Then click **Use**.
 
-Ask these questions one at a time — paste each into the input field and press Enter or click Send:
+Click **Start with Sam-v3** (or **Start with Sarah** if using custom) in the center panel.
+
+The center area changes to "Ask your first question". Type each question below into the input field at the bottom and click **Ask** (or press Enter):
 
 1. `Walk me through what happens the day a deal closes at your company — specifically how sales hands it off to CS.`
 2. `Has your team ever lost a customer or had a delayed onboarding because something fell through the cracks in that handoff?`
 3. `What does your team do today to work around the problem?`
 4. `If you had a tool that automatically packaged deal context and sent it to the CS team the moment a deal closed, what would make you trust it enough to actually use it?`
 
-**Watch the right panel update after each question:**
+**Watch the right panel update after each response:**
 - **Question quality score** — bar fills up (aim for 70+)
-- **Bias pressure** — spikes if a question is leading (question 1 should be clean, question 2 may flag)
+- **Bias pressure** — spikes if a question is leading
 - **Suggested follow-ups** — two auto-generated next questions
-- **Pinned quotes** — strong signal phrases extracted from Sam's answers
+- **Pinned quotes** — strong signal phrases extracted from the persona's answers
 
-After all 4 questions, click **Generate insights** (bottom of the page).
+After all 4 questions, click **Generate insights** (top right of the header bar).
 
 You are redirected to `/insights?room=[roomName]` automatically.
 
@@ -309,11 +311,22 @@ The **Knowledge Graph** on the left now shows:
 
 Click **Interview Suite** → **Live Meeting** (or http://localhost:3000/meeting)
 
-Fill the pre-meeting context (same values as Step 12), then click **Join Meeting**.
+You land on a **"Set up the interview"** screen — a 2-column form you must fill before you can join. Fill in all 6 fields:
 
-Speak into your microphone. Your speech is transcribed in real time and the AI coaching panel updates live — same intelligence as the simulator but with actual voice.
+| Field | Input |
+|---|---|
+| Objective | `Validate whether ops managers manually track customer handoffs and would pay to automate it` |
+| Target customer | `Revenue ops or CS leads at B2B SaaS companies with a dedicated sales team` |
+| Hypothesis | `Manual handoffs between sales and CS cause measurable revenue leakage` |
+| Success criteria | `Interviewee describes a real incident where a missed handoff lost a deal or churned a customer` |
+| Avoid topics | `Pricing, competitor tool names` |
+| Context notes | `Early-stage tool, no brand recognition yet. Focus on current pain, not product reaction.` |
 
-After the session, click **Generate summary** to save the report to Insights.
+Click **Join Meeting** (bottom right of the form).
+
+The live room opens. Speak into your microphone — your speech is transcribed in real time and the AI coaching panel updates live with the same signals as the simulator (bias flags, quality score, suggested follow-ups).
+
+When done, click **Generate insights** (top right) to save the report to Insights.
 
 ---
 
