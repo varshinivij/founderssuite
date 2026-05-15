@@ -147,6 +147,36 @@ export async function fetchEntity(entityId: string) {
   return res.json() as Promise<{ entity: GraphNode; relationships: GraphEdge[]; memories: MemoryChunk[] }>;
 }
 
+export async function ingestBrowserSession(opts: {
+  sessionId: string;
+  testerId: string;
+  testerName: string;
+  targetUrl: string;
+  output: string | null;
+  lastStepSummary: string | null;
+  stepCount: number;
+  isTaskSuccessful: boolean | null;
+  workspaceId?: string;
+}) {
+  const res = await fetch(`${BASE}/graph/browser-session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: opts.sessionId,
+      tester_id: opts.testerId,
+      tester_name: opts.testerName,
+      target_url: opts.targetUrl,
+      output: opts.output,
+      last_step_summary: opts.lastStepSummary,
+      step_count: opts.stepCount,
+      is_task_successful: opts.isTaskSuccessful,
+      workspace_id: opts.workspaceId ?? 'default',
+    }),
+  });
+  if (!res.ok) return null;
+  return res.json() as Promise<{ ok: boolean; nodes: GraphNode[]; relationships: number }>;
+}
+
 export async function startBrowserSession(input: BrowserSessionStartInput) {
   const res = await fetch(`${BASE}/browser/session/start`, {
     method: 'POST',

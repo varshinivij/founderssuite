@@ -1877,6 +1877,72 @@ async def workspace_graph(workspace_id: str):
     return {"nodes": nodes, "edges": edges}
 
 
+class BrowserSessionIngestRequest(BaseModel):
+    session_id: str
+    tester_id: str
+    tester_name: str
+    target_url: str
+    output: Optional[str] = None
+    last_step_summary: Optional[str] = None
+    step_count: int = 0
+    is_task_successful: Optional[bool] = None
+    workspace_id: str = "default"
+
+
+@app.post("/graph/browser-session")
+async def ingest_browser_session(req: BrowserSessionIngestRequest):
+    """Inject a completed browser-use session into the knowledge graph."""
+    from urllib.parse import urlparse
+    domain = urlparse(req.target_url).netloc or req.target_url
+
+    # Website node
+    website = _upsert_entity("website", domain, req.workspace_id,
+                             url=req.target_url)
+
+    # Persona node (the tester)
+    persona = _upsert_entity("persona", req.tester_name, req.workspace_id,
+                             tester_id=req.tester_id)
+
+    # Browser test node
+    test_name = f"Test: {req.tester_name} → {domain}"
+    test = _upsert_entity(
+        "browser_test", test_name, req.workspace_id,
+        session_id=req.session_id,
+        step_count=req.step_count,
+        is_successful=req.is_task_successful,
+        output=req.output or "",
+        summary=req.last_step_summary or "",
+        target_url=req.target_url,
+    )
+
+    # Edges
+    _add_relationship(persona["id"], test["id"], "ran_test", req.workspace_id, confidence=1.0)
+    _add_relationship(test["id"], website["id"], "tested", req.workspace_id, confidence=1.0)
+    if req.is_task_successful:
+        _add_relationship(persona["id"], website["id"], "navigated_successfully", req.workspace_id, confidence=0.95)
+
+    # Store output as a memory chunk so it appears in search
+    if req.output:
+        chunk = {
+            "id": f"browser_test:{req.session_id}",
+            "workspace_id": req.workspace_id,
+            "text": req.output,
+            "topic": f"browser_test_{domain}",
+            "source": "browser_use",
+            "speaker": req.tester_name,
+            "room_name": req.session_id,
+            "confidence": 0.9,
+            "entity_ids": [persona["id"], website["id"], test["id"]],
+        }
+        _memory_chunks.append(chunk)
+
+    return {
+        "ok": True,
+        "nodes": [website, persona, test],
+        "relationships": 2 + (1 if req.is_task_successful else 0),
+    }
+
+
 @app.get("/entities/{entity_id}")
 async def entity_detail(entity_id: str):
     entity = _entities.get(entity_id)
@@ -1995,6 +2061,223 @@ async def approve_browser_submission(session_id: str):
     session["updated_at"] = datetime.now().isoformat()
     _browser_event(session, "submission_approved", "User approved final submission. Session completed.", confidence=1.0)
     return {"session": _serialize_browser_session(session)}
+
+
+class PersonaTestRequest(BaseModel):
+    target_url: str
+    tester_id: str
+    founder_id: str
+    objective: str = ""
+
+
+def _build_persona_task(tester: dict, profile: dict, form: dict | None, objective: str = "") -> str:
+    name = tester.get("name", "Unknown tester")
+    headline = profile.get("professional_headline") or ""
+    domain = profile.get("domain") or ""
+    experience = profile.get("lived_experience") or ""
+    skills = ", ".join(profile.get("skills") or [])
+    methodology = profile.get("methodology") or ""
+    testing_types = ", ".join(profile.get("testing_types") or [])
+    availability = profile.get("availability") or ""
+    form_title = (form or {}).get("title", "")
+    form_desc = (form or {}).get("description", "")
+    target_profile = (form or {}).get("target_profile", "")
+
+    primary_task = objective.strip() if objective.strip() else (
+        f"Explore the site as {name} would and try to complete a key workflow relevant to your background."
+    )
+
+    return f"""You are simulating {name}, a real user with the following background:
+
+PERSONA
+Name: {name}
+Role: {headline}
+Domain expertise: {domain}
+Skills: {skills}
+Testing approach: {methodology or testing_types}
+Availability context: {availability}
+
+LIVED EXPERIENCE
+{experience}
+
+STUDY CONTEXT
+The founder is running: "{form_title}"
+Study description: {form_desc}
+Target profile they described: {target_profile}
+
+YOUR PRIMARY OBJECTIVE — complete this exactly as {name} would:
+{primary_task}
+
+ADDITIONAL INSTRUCTIONS
+- Stay fully in character as {name} throughout
+- Note any friction, confusion, or missing features you encounter along the way
+- Do NOT submit forms with personal data, enter real credentials, or make purchases
+- After completing the objective, briefly summarize: what worked, what was confusing, and one thing you'd change
+
+Be specific about every element you see and interact with."""
+
+
+@app.get("/browser/tester-personas")
+async def list_tester_personas(founder_id: str):
+    """Return testers who have accepted matches with this founder, enriched with profile data."""
+    if not _use_supabase():
+        return {"personas": []}
+    try:
+        # Get all accepted/pending matches for this founder's forms
+        forms_res = supabase.table("validation_forms").select("id,title,description,target_profile").eq("founder_id", founder_id).execute()
+        form_ids = [f["id"] for f in (forms_res.data or [])]
+        form_map = {f["id"]: f for f in (forms_res.data or [])}
+        if not form_ids:
+            return {"personas": []}
+
+        matches_res = supabase.table("matches").select("id,tester_id,form_id,score,status").in_("form_id", form_ids).in_("status", ["accepted", "pending"]).execute()
+        tester_ids = list({m["tester_id"] for m in (matches_res.data or [])})
+        if not tester_ids:
+            return {"personas": []}
+
+        match_by_tester = {}
+        for m in (matches_res.data or []):
+            if m["tester_id"] not in match_by_tester:
+                match_by_tester[m["tester_id"]] = m
+
+        users_res = supabase.table("users").select("id,name").in_("id", tester_ids).execute()
+        profiles_res = supabase.table("tester_profiles").select(
+            "id,domain,lived_experience,skills,professional_headline,methodology,testing_types,availability,quality_score,projects_tested"
+        ).in_("id", tester_ids).execute()
+
+        user_map = {u["id"]: u for u in (users_res.data or [])}
+        profile_map = {p["id"]: p for p in (profiles_res.data or [])}
+
+        personas = []
+        for tid in tester_ids:
+            u = user_map.get(tid, {})
+            p = profile_map.get(tid, {})
+            m = match_by_tester.get(tid, {})
+            form = form_map.get(m.get("form_id", ""), {})
+            personas.append({
+                "tester_id": tid,
+                "name": u.get("name", "Tester"),
+                "domain": p.get("domain"),
+                "headline": p.get("professional_headline"),
+                "skills": p.get("skills") or [],
+                "quality_score": p.get("quality_score", 0),
+                "match_score": round((m.get("score") or 0) * 100),
+                "form_title": form.get("title", ""),
+                "match_id": m.get("id"),
+            })
+
+        return {"personas": sorted(personas, key=lambda x: -x["match_score"])}
+    except Exception as exc:
+        logger.warning("list_tester_personas failed: %s", exc)
+        return {"personas": []}
+
+
+@app.post("/browser/persona-test")
+async def start_persona_test(req: PersonaTestRequest):
+    """Launch a browser-use cloud session using a tester's persona."""
+    if not BROWSER_USE_API_KEY:
+        raise HTTPException(status_code=503, detail="BROWSER_USE_API_KEY not configured")
+    if not _use_supabase():
+        raise HTTPException(status_code=503, detail="Supabase not configured")
+
+    # Fetch tester + profile
+    try:
+        user_res = supabase.table("users").select("id,name").eq("id", req.tester_id).limit(1).execute()
+        profile_res = supabase.table("tester_profiles").select(
+            "id,domain,lived_experience,skills,professional_headline,methodology,testing_types,availability"
+        ).eq("id", req.tester_id).limit(1).execute()
+        # Find the match to get the form context
+        forms_res = supabase.table("validation_forms").select("id,title,description,target_profile").eq("founder_id", req.founder_id).execute()
+        form_ids = [f["id"] for f in (forms_res.data or [])]
+        form = None
+        if form_ids:
+            match_res = supabase.table("matches").select("form_id").eq("tester_id", req.tester_id).in_("form_id", form_ids).limit(1).execute()
+            if match_res.data:
+                fid = match_res.data[0]["form_id"]
+                form_obj = supabase.table("validation_forms").select("id,title,description,target_profile").eq("id", fid).limit(1).execute()
+                form = form_obj.data[0] if form_obj.data else None
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"DB lookup failed: {exc}")
+
+    tester = user_res.data[0] if user_res.data else {}
+    profile = profile_res.data[0] if profile_res.data else {}
+    task = _build_persona_task(tester, profile, form, objective=req.objective)
+
+    # Build and fire the browser-use session
+    session_id = f"persona_{uuid.uuid4().hex[:10]}"
+    now = datetime.now().isoformat()
+    session = {
+        "id": session_id,
+        "target_url": req.target_url,
+        "task": task,
+        "tester_id": req.tester_id,
+        "tester_name": tester.get("name", "Tester"),
+        "status": "running",
+        "live_url": None,
+        "cloud_session_id": None,
+        "screenshot_url": None,
+        "last_step_summary": None,
+        "step_count": 0,
+        "output": None,
+        "is_task_successful": None,
+        "recording_urls": [],
+        "events": [],
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    try:
+        task_prompt = (
+            f"Visit this URL: {req.target_url}\n\n"
+            f"{task}"
+        )
+        with httpx.Client(timeout=30) as client:
+            resp = client.post(
+                f"{BROWSER_USE_BASE_URL}/sessions",
+                headers=_browser_use_headers(),
+                json={
+                    "task": task_prompt,
+                    "model": BROWSER_USE_MODEL,
+                    "keepAlive": True,
+                    "maxCostUsd": 2,
+                    "enableRecording": True,
+                },
+            )
+            resp.raise_for_status()
+            cloud = resp.json()
+            session["cloud_session_id"] = cloud.get("id") or cloud.get("sessionId")
+            session["live_url"] = cloud.get("liveUrl") or cloud.get("live_url")
+            session["status"] = "running"
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Browser Use API error: {exc}")
+
+    _browser_sessions[session_id] = session
+    return {"session": session}
+
+
+@app.get("/browser/persona-test/{session_id}")
+async def get_persona_test(session_id: str):
+    session = _browser_sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    cloud_id = session.get("cloud_session_id")
+    if cloud_id and BROWSER_USE_API_KEY:
+        try:
+            with httpx.Client(timeout=10) as client:
+                r = client.get(f"{BROWSER_USE_BASE_URL}/sessions/{cloud_id}", headers=_browser_use_headers())
+                if r.status_code == 200:
+                    data = r.json()
+                    session["status"] = data.get("status", session["status"])
+                    session["live_url"] = data.get("liveUrl") or data.get("live_url") or session["live_url"]
+                    session["screenshot_url"] = data.get("screenshotUrl")
+                    session["last_step_summary"] = data.get("lastStepSummary")
+                    session["step_count"] = data.get("stepCount", 0)
+                    session["output"] = data.get("output")
+                    session["is_task_successful"] = data.get("isTaskSuccessful")
+                    session["recording_urls"] = data.get("recordingUrls") or []
+        except Exception:
+            pass
+    return {"session": session}
 
 
 @app.get("/meetings")
