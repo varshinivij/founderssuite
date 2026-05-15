@@ -199,36 +199,6 @@ export const mockTesterProfiles: TesterProfile[] = [
     methodology:
       "Hardware + app pairing tests with weak network and glove-on interactions. I log environmental failure modes (vibration, sunlight, mount positions).",
   },
-  // 7 more testers (shorter)
-  ...Array.from({ length: 7 }).map((_, i) => {
-    const idx = i + 6;
-    const domains: Domain[] = ["SaaS", "MedTech", "EdTech", "FinTech", "Other"];
-    const pinIds = [12, 32, 45, 16, 27, 68, 11, 59, 33] as const;
-    return {
-      id: `tester_${idx}`,
-      email: `tester${idx}@example.com`,
-      name: `Tester ${idx}`,
-      role: "tester" as const,
-      createdAt: isoDaysAgo(20 + i * 11),
-      domain: domains[i % domains.length],
-      livedExperience: "Hands-on experience relevant to early-stage validation.",
-      skills: ["Research", "Communication", "Domain Knowledge"],
-      hourlyRate: 40 + i * 5,
-      availability: "Flexible",
-      timezone: "PT",
-      testingTypes: ["survey", "interview"],
-      platformPreferences: ["web"],
-      industryInterests: ["SaaS", "Other"],
-      qualityScore: 4.2 + (i % 4) * 0.2,
-      projectsTested: 5 + i * 2,
-      totalTestingHours: Math.round(24 + (5 + i * 2) * 8 + i * 14),
-      previousCompany: null,
-      isTopVoice: i % 5 === 0,
-      tags: ["Research", "Communication", "Domain Knowledge"],
-      bio: "I give crisp, structured feedback.",
-      pravatarImgId: pinIds[i % pinIds.length],
-    } satisfies TesterProfile;
-  }),
 ];
 
 export const mockStories: UserStory[] = [
