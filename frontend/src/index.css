@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* ── Design Tokens ───────────────────────────────────── */
 :root {
@@ -39,7 +40,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { height: 100%; }
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+}
 
 body {
   background: var(--bg);
@@ -49,18 +53,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
-  display: flex;
-  flex-direction: row;
+  /* No flex here — landing page and auth pages need plain block flow */
 }
 
 .app-shell {
   min-height: 100vh;
   width: 100%;
   display: flex;
+  flex-direction: row;
   background: var(--bg);
 }
 
@@ -71,6 +76,11 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding: 28px 32px;
+}
+
+@media (max-width: 768px) {
+  .app-main { padding: 20px 18px; }
 }
 
 /* ── Animations ──────────────────────────────────────── */

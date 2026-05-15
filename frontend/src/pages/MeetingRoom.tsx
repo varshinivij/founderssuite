@@ -5,9 +5,15 @@ import { Track } from 'livekit-client';
 import { analyzeLiveIntelligence, fetchToken, fetchTranscript, saveMeetingContext, storeTranscript } from '../lib/api';
 import type { BiasEvent, LiveIntelligenceState, MeetingContext, QuoteEvent, Segment } from '../lib/api';
 import { createLocalIntelligence, mergeBiasEvents } from '../lib/interviewIntelligence';
+import { fetchMatch, setMatchStatus } from '../lib/matches';
+import type { TesterMatch } from '../lib/matches';
+import { notifyCallStarted } from '../lib/notifications';
+import { useAuth } from '../lib/auth';
 import TranscriptFeed from '../components/meeting/TranscriptFeed';
 import KnowledgeGraphPanel from '../components/knowledge/KnowledgeGraphPanel';
 import BrandMark from '../components/layout/BrandMark';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ConnectionDetails { serverUrl: string; roomName: string; participantToken: string; }
 
@@ -478,6 +484,10 @@ function IntelligencePanel({ state }: { state: LiveIntelligenceState }) {
 export default function MeetingRoom() {
   const { roomId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isMatchId = !!roomId && UUID_RE.test(roomId);
+  const [testerMatch, setTesterMatch] = useState<TesterMatch | null>(null);
+  const [matchLoading, setMatchLoading] = useState(isMatchId);
   const [connection, setConnection] = useState<ConnectionDetails | null>(null);
   const [connected, setConnected] = useState(false);
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -498,6 +508,61 @@ export default function MeetingRoom() {
   const lastBackendAtRef = useRef(0);
   const lastAnalyzedCountRef = useRef(0);
 
+  // Redirect bare /meeting to dashboard — only valid with a match ID
+  useEffect(() => {
+    if (!roomId) navigate('/dashboard', { replace: true });
+  }, [roomId, navigate]);
+
+  // Load match context then auto-connect — no pre-join screen
+  useEffect(() => {
+    if (!isMatchId || !roomId) return;
+    fetchMatch(roomId).then(m => {
+      if (!m) { navigate('/dashboard', { replace: true }); return; }
+      setTesterMatch(m);
+      const ctx = {
+        objective: m.formDescription
+          ? `Validate: ${m.formDescription}`
+          : `Understand the current workflow and biggest pain points around ${m.domain ?? 'the problem space'}.`,
+        target_customer: [m.name, m.domain, m.headline].filter(Boolean).join(' · '),
+        hypothesis: m.formTargetProfile
+          ? `This tester matches: ${m.formTargetProfile}`
+          : m.livedExperience ?? '',
+        success_criteria: `Tester confirms real pain. Match score: ${m.matchScore}%.`,
+        avoid_topics: '',
+        notes: [
+          m.skills.length ? `Skills: ${m.skills.join(', ')}` : '',
+          m.methodology ? `Method: ${m.methodology}` : '',
+          m.availability ? `Avail: ${m.availability} ${m.timezone ?? ''}` : '',
+        ].filter(Boolean).join('\n'),
+      };
+      setMeetingContext(ctx);
+      // Auto-connect immediately — no manual setup step
+      const roomName = `match-${roomId}`;
+      fetchToken(roomName).then(async details => {
+        await saveMeetingContext(details.roomName, ctx).catch(() => {});
+        setConnection(details);
+        setConnected(true);
+        if (m) {
+          setMatchStatus(roomId, 'accepted').catch(() => {});
+          notifyCallStarted({
+            testerId: m.testerId,
+            matchId: roomId,
+            founderName: user?.name ?? 'A founder',
+            formTitle: m.formTitle,
+          }).catch(() => {});
+        }
+        fetchTranscript(details.roomName).then(({ segments: s }) => setSegments(s)).catch(() => {});
+        setBrowserFallbackEnabled(false);
+        setTranscriptionStatus('Waiting for speech');
+        const interval = setInterval(async () => {
+          const { segments: s } = await fetchTranscript(details.roomName);
+          setSegments(s);
+        }, 3000);
+        setPollInterval(interval);
+      }).catch(() => setError('Failed to connect — is the API server running on localhost:8000?'));
+    }).finally(() => setMatchLoading(false));
+  }, [isMatchId, roomId]);
+
   const localIntelligence = useMemo(() => createLocalIntelligence(segments), [segments]);
   const intelligence = useMemo<LiveIntelligenceState>(() => {
     if (!serverIntelligence) return localIntelligence;
@@ -515,11 +580,13 @@ export default function MeetingRoom() {
     };
   }, [localIntelligence, serverIntelligence]);
 
+  // connect() kept for tester-side join (no match context to auto-load)
   const connect = useCallback(async () => {
     try {
       setError(null);
-      const details = await fetchToken(roomId);
-      await saveMeetingContext(details.roomName, meetingContext);
+      const roomName = isMatchId && roomId ? `match-${roomId}` : roomId;
+      const details = await fetchToken(roomName);
+      await saveMeetingContext(details.roomName, meetingContext).catch(() => {});
       setConnection(details);
       setConnected(true);
       const initial = await fetchTranscript(details.roomName);
@@ -534,7 +601,7 @@ export default function MeetingRoom() {
     } catch {
       setError('Failed to connect — is the API server running on localhost:8000?');
     }
-  }, [meetingContext, roomId]);
+  }, [meetingContext, roomId, isMatchId]);
 
   useEffect(() => () => { if (pollInterval) clearInterval(pollInterval); }, [pollInterval]);
 
@@ -656,77 +723,23 @@ export default function MeetingRoom() {
       )}
 
       {!connected ? (
-        /* Join screen */
         <div className="flex-1 flex items-center justify-center" style={{ background: '#faf9fd' }}>
-          <div style={{ width: 'min(920px, calc(100vw - 48px))' }}>
-            <div className="flex justify-center" style={{ marginBottom: 20 }}>
-              <BrandMark size={70} fontSize={30} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%',
+              border: '3px solid rgba(107,45,139,0.15)',
+              borderTop: '3px solid #6b2d8b',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'rgba(88,77,102,0.5)' }}>
+              {matchLoading ? 'Loading session…' : 'Connecting…'}
             </div>
-            <div className="text-center" style={{ marginBottom: 22 }}>
-              <h2 style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 800,
-                fontSize: 30,
-                color: 'var(--text-1)',
-                marginBottom: 10,
-              }}>
-                Set up the interview
-              </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: 14, lineHeight: 1.55 }}>
-                Define what you are trying to learn before the live coaching starts.
-              </p>
-            </div>
-
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                gap: 12,
-                background: '#ffffff',
-                border: '1px solid rgba(201,184,216,0.8)',
-                borderRadius: 18,
-                padding: 16,
-                boxShadow: '0 16px 44px rgba(33,11,44,0.07)',
-              }}
-            >
-              {[
-                { key: 'objective', label: 'Objective', placeholder: 'What should this interview teach you?' },
-                { key: 'target_customer', label: 'Target customer', placeholder: 'Who are you interviewing?' },
-                { key: 'hypothesis', label: 'Hypothesis', placeholder: 'What belief are you testing?' },
-                { key: 'success_criteria', label: 'Success criteria', placeholder: 'What would count as a strong signal?' },
-                { key: 'avoid_topics', label: 'Avoid topics', placeholder: 'What should the conversation avoid?' },
-                { key: 'notes', label: 'Context notes', placeholder: 'Product, market, or workflow context.' },
-              ].map(field => (
-                <label key={field.key} className="flex flex-col gap-2">
-                  <span className="fs-label">{field.label}</span>
-                  <textarea
-                    value={meetingContext[field.key as keyof MeetingContext]}
-                    onChange={event => updateMeetingContext(field.key as keyof MeetingContext, event.target.value)}
-                    placeholder={field.placeholder}
-                    rows={2}
-                    style={{
-                      resize: 'none',
-                      border: '1px solid rgba(201,184,216,0.85)',
-                      borderRadius: 12,
-                      padding: '10px 12px',
-                      minHeight: 58,
-                      color: 'var(--text-dim)',
-                      background: '#faf9fd',
-                      fontSize: 13,
-                      lineHeight: 1.35,
-                    }}
-                  />
-                </label>
-              ))}
-              <div className="flex items-center justify-between" style={{ gridColumn: '1 / -1', marginTop: 4 }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                  This context guides bias detection, topic drift, and post-interview insights.
-                </span>
-                <button onClick={connect} className="fs-btn-primary" style={{ fontSize: 15, padding: '12px 30px', borderRadius: 12 }}>
-                  Join Meeting
-                </button>
+            {testerMatch && (
+              <div style={{ fontSize: 13, color: 'rgba(88,77,102,0.6)' }}>
+                Joining call with <strong style={{ color: '#210b2c' }}>{testerMatch.name}</strong>
               </div>
-            </div>
+            )}
           </div>
         </div>
       ) : (

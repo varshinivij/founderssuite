@@ -1,13 +1,7 @@
-import { useState, type ComponentType, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
-import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
-import VideocamRoundedIcon from '@mui/icons-material/VideocamRounded';
 import ForumRoundedIcon from '@mui/icons-material/ForumRounded';
-import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded';
-import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
-import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded';
-import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded';
-import TravelExploreRoundedIcon from '@mui/icons-material/TravelExploreRounded';
+import VideocamRoundedIcon from '@mui/icons-material/VideocamRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import BrandMark from './BrandMark';
@@ -15,18 +9,11 @@ import NotificationBell from './NotificationBell';
 import NavProfile from './NavProfile';
 
 const NAV = [
-  { to: '/dashboard', label: 'Matches', Icon: GroupsRoundedIcon },
-  { to: '/meeting', label: 'Interview', Icon: VideocamRoundedIcon },
-  { to: '/community', label: 'Community', Icon: ForumRoundedIcon },
-  { to: '/browser-use', label: 'Browser Use', Icon: TravelExploreRoundedIcon },
-  { to: '/agents', label: 'AI Agents', Icon: SmartToyRoundedIcon },
-  { to: '/simulator', label: 'Simulator', Icon: DashboardRoundedIcon },
-  { to: '/icp-agent', label: 'ICP Agent', Icon: SmartToyRoundedIcon },
-  { to: '/knowledge-base', label: 'Knowledge Base', Icon: AccountTreeRoundedIcon },
-  { to: '/analysis', label: 'Analysis', Icon: AnalyticsRoundedIcon },
-] satisfies Array<{ to: string; label: string; Icon: ComponentType<{ fontSize?: 'small' | 'medium'; style?: CSSProperties }> }>;
+  { to: '/tester/threads', label: 'Threads', Icon: ForumRoundedIcon },
+  { to: '/meeting', label: 'Call', Icon: VideocamRoundedIcon },
+];
 
-export default function Navbar() {
+export default function TesterNav() {
   const { pathname } = useLocation();
   const [expanded, setExpanded] = useState(false);
   const width = expanded ? 224 : 82;
@@ -49,25 +36,19 @@ export default function Navbar() {
       }}
     >
       <div className="flex items-center" style={{ justifyContent: expanded ? 'space-between' : 'center', gap: 10, marginBottom: 22 }}>
-        <Link to="/" className="flex items-center no-underline" aria-label="Home" style={{ minWidth: 38 }}>
+        <Link to="/tester/threads" className="flex items-center no-underline" aria-label="Home" style={{ minWidth: 38 }}>
           <BrandMark />
         </Link>
-
         <button
           type="button"
-          onClick={() => setExpanded(current => !current)}
+          onClick={() => setExpanded(c => !c)}
           aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
-          title={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
           className="flex items-center justify-center"
           style={{
-            width: 32,
-            height: 32,
+            width: 32, height: 32,
             border: '1px solid rgba(201,184,216,0.86)',
-            borderRadius: 10,
-            background: '#faf9fd',
-            color: '#210b2c',
-            cursor: 'pointer',
-            flexShrink: 0,
+            borderRadius: 10, background: '#faf9fd',
+            color: '#210b2c', cursor: 'pointer', flexShrink: 0,
           }}
         >
           {expanded ? <ChevronLeftRoundedIcon fontSize="small" /> : <ChevronRightRoundedIcon fontSize="small" />}
@@ -86,10 +67,8 @@ export default function Navbar() {
               title={label}
               aria-label={label}
               style={{
-                width: '100%',
-                height: 46,
-                display: 'flex',
-                alignItems: 'center',
+                width: '100%', height: 46,
+                display: 'flex', alignItems: 'center',
                 justifyContent: expanded ? 'flex-start' : 'center',
                 gap: 12,
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
