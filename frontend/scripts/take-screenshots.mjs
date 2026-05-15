@@ -85,9 +85,6 @@ async function run() {
     await gotoAndShot(page, "/founder/forms/new", "12-founder-forms-new.png");
     await gotoAndShot(page, "/founder/profile", "13-founder-profile.png");
     await gotoAndShot(page, "/founder/settings", "14-founder-settings.png");
-    await gotoAndShot(page, "/community", "15-community.png");
-    await gotoAndShot(page, "/community/SaaS", "16-community-domain-saas.png");
-    await gotoAndShot(page, "/community/post/post_1", "17-community-thread.png");
     await gotoAndShot(page, "/agents", "18-agents.png");
     await gotoAndShot(page, "/agents/agent_1", "19-agent-detail.png");
     await page.close();
@@ -105,6 +102,9 @@ async function run() {
     await gotoAndShot(page, "/tester/matches", "31-tester-matches.png");
     await gotoAndShot(page, "/tester/profile", "32-tester-profile.png");
     await gotoAndShot(page, "/tester/settings", "33-tester-settings.png");
+    await gotoAndShot(page, "/community", "15-community.png");
+    await gotoAndShot(page, "/community/SaaS", "16-community-domain-saas.png");
+    await gotoAndShot(page, "/community/post/post_1", "17-community-thread.png");
     await page.close();
   }
 

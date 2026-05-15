@@ -39,7 +39,6 @@ export function Sidebar({
           { href: "/founder/feedback", label: "Feedback", icon: <Inbox /> },
           { href: "/founder/profile", label: "Profile", icon: <Users /> },
           { href: "/founder/settings", label: "Settings", icon: <Settings /> },
-          { href: "/community", label: "Community", icon: <MessageSquare /> },
           { href: "/agents", label: "AI Agents", icon: <Bot /> },
         ]
       : [

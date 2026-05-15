@@ -17,6 +17,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const isAllowed = useMemo(() => {
     if (!pathname) return true;
+    if (pathname.startsWith("/community") && role === "founder") return false;
     if (pathname.startsWith("/founder")) return role === "founder";
     if (pathname.startsWith("/tester")) return role === "tester";
     return true;

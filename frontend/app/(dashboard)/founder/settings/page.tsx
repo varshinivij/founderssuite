@@ -6,7 +6,6 @@ export default function FounderSettingsPage() {
   const [newFeedback, setNewFeedback] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [milestones, setMilestones] = useState(false);
-  const [hubVisibility, setHubVisibility] = useState(true);
 
   return (
     <div className="space-y-6">
@@ -116,12 +115,6 @@ export default function FounderSettingsPage() {
                 sub: "When a tester completes all the tasks",
                 value: milestones,
                 set: setMilestones,
-              },
-              {
-                title: "Community Hub Visibility",
-                sub: "Allow testers to post publicly about your product",
-                value: hubVisibility,
-                set: setHubVisibility,
               },
             ].map((row) => (
               <div key={row.title} className="py-5 flex items-center justify-between gap-4">

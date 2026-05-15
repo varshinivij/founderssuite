@@ -97,7 +97,7 @@ export default function FounderMatchesPage() {
           Your tester matches
         </h1>
         <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
-          Connect with testers from the community whose experience lines up with what your product needs for beta
+          Connect with testers whose experience lines up with what your product needs for beta
           validation, interviews, and structured feedback.
         </p>
       </div>

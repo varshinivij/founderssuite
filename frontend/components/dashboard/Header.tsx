@@ -19,7 +19,6 @@ export function Header({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const nav =
     role === "founder"
       ? [
-          { href: "/community", label: "Community", icon: <MessageSquare /> },
           { href: "/founder/matches", label: "Matches", icon: <Gauge /> },
           { href: "/founder/dashboard", label: "Dashboard", icon: <LayoutGrid /> },
           { href: "/founder/feedback", label: "Feedback", icon: <Inbox />, badge: counts.feedback },
