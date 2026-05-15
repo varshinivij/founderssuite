@@ -5,6 +5,9 @@ import Dashboard from './pages/Dashboard';
 import MeetingRoom from './pages/MeetingRoom';
 import AIMarketplace from './pages/AIMarketplace';
 import Simulator from './pages/Simulator';
+import IcpAgent from './pages/IcpAgent';
+import MeetingSummary from './pages/MeetingSummary';
+import KnowledgeBase from './pages/KnowledgeBase';
 
 const KnowledgeGraph3D = lazy(() => import('./pages/KnowledgeGraph3D'));
 
@@ -18,7 +21,7 @@ class GraphErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
   render() {
     if (this.state.failed) {
       return (
-        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 72px)', background: '#faf9fd', color: '#210b2c', padding: 24 }}>
+        <div className="flex items-center justify-center" style={{ height: '100vh', background: '#faf9fd', color: '#210b2c', padding: 24 }}>
           <div style={{ maxWidth: 520, textAlign: 'center' }}>
             <div style={{ fontFamily: "'IBM Plex Mono', monospace", color: '#6b2d8b', fontSize: 11, marginBottom: 10 }}>GRAPH RENDERING UNAVAILABLE</div>
             <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>The 3D graph could not start in this browser.</h1>
@@ -34,23 +37,31 @@ class GraphErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
 export default function App() {
   return (
     <BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/meeting/:roomId?" element={<MeetingRoom />} />
-        <Route path="/simulator" element={<Simulator />} />
-        <Route
-          path="/graph"
-          element={(
-            <GraphErrorBoundary>
-              <Suspense fallback={<div style={{ padding: 24, color: '#210b2c' }}>Loading graph...</div>}>
-                <KnowledgeGraph3D />
-              </Suspense>
-            </GraphErrorBoundary>
-          )}
-        />
-        <Route path="/marketplace" element={<AIMarketplace />} />
-      </Routes>
+      <div className="app-shell">
+        <Navbar />
+        <main className="app-main">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/meeting/:roomId?" element={<MeetingRoom />} />
+            <Route path="/simulator" element={<Simulator />} />
+            <Route path="/icp-agent" element={<IcpAgent />} />
+            <Route path="/analysis/:roomName?" element={<MeetingSummary />} />
+            <Route path="/summary/:roomName?" element={<MeetingSummary />} />
+            <Route path="/knowledge-base" element={<KnowledgeBase />} />
+            <Route
+              path="/graph"
+              element={(
+                <GraphErrorBoundary>
+                  <Suspense fallback={<div style={{ padding: 24, color: '#210b2c' }}>Loading graph...</div>}>
+                    <KnowledgeGraph3D />
+                  </Suspense>
+                </GraphErrorBoundary>
+              )}
+            />
+            <Route path="/marketplace" element={<AIMarketplace />} />
+          </Routes>
+        </main>
+      </div>
     </BrowserRouter>
   );
 }

@@ -228,7 +228,7 @@ export default function PipelinePanel({ report, isGenerating }: Props) {
         <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
           <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.4 }}>⬡</div>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.6 }}>
-            Join an interview and click<br /><span style={{ color: 'var(--text-dim)' }}>Analyze interview</span> to review it
+            Join an interview, then open<br /><span style={{ color: 'var(--text-dim)' }}>Analysis</span> from the sidebar
           </p>
         </div>
       )}

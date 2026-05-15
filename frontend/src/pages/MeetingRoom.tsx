@@ -2,10 +2,12 @@ import { type CSSProperties, useEffect, useState, useCallback, useMemo, useRef }
 import { useParams, useNavigate } from 'react-router';
 import { LiveKitRoom, ParticipantTile, RoomAudioRenderer, TrackLoop, useLocalParticipant, useParticipants, useTracks } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { analyzeLiveIntelligence, fetchToken, fetchTranscript, generateSummary, saveMeetingContext, storeTranscript } from '../lib/api';
+import { analyzeLiveIntelligence, fetchToken, fetchTranscript, saveMeetingContext, storeTranscript } from '../lib/api';
 import type { BiasEvent, LiveIntelligenceState, MeetingContext, QuoteEvent, Segment } from '../lib/api';
 import { createLocalIntelligence, mergeBiasEvents } from '../lib/interviewIntelligence';
 import TranscriptFeed from '../components/meeting/TranscriptFeed';
+import KnowledgeGraphPanel from '../components/knowledge/KnowledgeGraphPanel';
+import BrandMark from '../components/layout/BrandMark';
 
 interface ConnectionDetails { serverUrl: string; roomName: string; participantToken: string; }
 
@@ -139,12 +141,10 @@ function VideoGrid() {
 }
 
 function MediaControls({
-  generating,
-  onGenerateSummary,
+  onOpenAnalysis,
   onError,
 }: {
-  generating: boolean;
-  onGenerateSummary: () => void;
+  onOpenAnalysis: () => void;
   onError: (message: string) => void;
 }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
@@ -184,11 +184,10 @@ function MediaControls({
         {isCameraEnabled ? 'Camera off' : 'Camera on'}
       </button>
       <button
-        onClick={onGenerateSummary}
-        disabled={generating}
+        onClick={onOpenAnalysis}
         className="fs-btn-primary"
       >
-        {generating ? 'Generating…' : 'Generate insights'}
+        Open analysis
       </button>
     </div>
   );
@@ -483,7 +482,6 @@ export default function MeetingRoom() {
   const [connected, setConnected] = useState(false);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [serverIntelligence, setServerIntelligence] = useState<LiveIntelligenceState | null>(null);
-  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transcriptionStatus, setTranscriptionStatus] = useState('Waiting for speech');
   const [browserFallbackEnabled, setBrowserFallbackEnabled] = useState(false);
@@ -570,17 +568,9 @@ export default function MeetingRoom() {
       });
   }, [connected, connection, segments.length]);
 
-  const handleGenerateSummary = async () => {
+  const handleOpenAnalysis = () => {
     if (!connection) return;
-    setGenerating(true);
-    try {
-      await generateSummary(connection.roomName);
-      navigate('/', { state: { room: connection.roomName } });
-    } catch {
-      setError('Summary generation failed');
-    } finally {
-      setGenerating(false);
-    }
+    navigate(`/analysis/${connection.roomName}`);
   };
 
   const handleLeave = () => {
@@ -646,11 +636,11 @@ export default function MeetingRoom() {
           {connected && (
             <>
               <button
-                onClick={handleGenerateSummary}
-                disabled={generating || segments.length === 0}
+                onClick={handleOpenAnalysis}
+                disabled={segments.length === 0}
                 className="fs-btn-primary"
               >
-                {generating ? 'Generating…' : 'Generate insights'}
+                Open analysis
               </button>
               <button onClick={handleLeave} className="fs-btn-ghost">Leave</button>
             </>
@@ -669,11 +659,8 @@ export default function MeetingRoom() {
         /* Join screen */
         <div className="flex-1 flex items-center justify-center" style={{ background: '#faf9fd' }}>
           <div style={{ width: 'min(920px, calc(100vw - 48px))' }}>
-            <div
-              className="flex items-center justify-center mx-auto rounded-3xl"
-              style={{ width: 70, height: 70, background: 'rgba(201,184,216,0.45)', border: '1px solid rgba(201,184,216,0.9)', fontSize: 28, color: '#210b2c', marginBottom: 20 }}
-            >
-              FS
+            <div className="flex justify-center" style={{ marginBottom: 20 }}>
+              <BrandMark size={70} fontSize={30} />
             </div>
             <div className="text-center" style={{ marginBottom: 22 }}>
               <h2 style={{
@@ -799,13 +786,15 @@ export default function MeetingRoom() {
               {/* Right panel */}
               <div className="flex flex-col" style={{ width: 360, minWidth: 360, background: 'var(--surface-0)' }}>
                 <ParticipantList />
+                <div style={{ height: 320, padding: 10, borderBottom: '1px solid rgba(201,184,216,0.72)' }}>
+                  <KnowledgeGraphPanel compact title="Interview Graph" activeNodeId={meetingContext.target_customer || undefined} />
+                </div>
                 <IntelligencePanel state={intelligence} />
               </div>
             </div>
 
             <MediaControls
-              generating={generating}
-              onGenerateSummary={handleGenerateSummary}
+              onOpenAnalysis={handleOpenAnalysis}
               onError={setError}
             />
             <BrowserTranscriptFallback

@@ -1,5 +1,3 @@
--- Run this in your Supabase SQL editor
-
 create table if not exists meetings (
   id uuid primary key default gen_random_uuid(),
   room_name text unique not null,
@@ -15,9 +13,6 @@ create table if not exists transcripts (
   timestamp_ms bigint,
   created_at timestamptz default now()
 );
-
-create index if not exists transcripts_meeting_id_idx on transcripts(meeting_id);
-create index if not exists transcripts_timestamp_idx on transcripts(timestamp_ms);
 
 create table if not exists summaries (
   id uuid primary key default gen_random_uuid(),
@@ -89,38 +84,12 @@ create table if not exists browser_sessions (
   updated_at timestamptz default now()
 );
 
-create table if not exists icp_agents (
-  id text primary key,
-  workspace_id text not null default 'default',
-  name text not null,
-  target_customer text not null,
-  market text,
-  pains text,
-  buying_triggers text,
-  objections text,
-  voice_id text,
-  reinforcement_count integer not null default 0,
-  metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-create table if not exists agent_feedback (
-  id uuid primary key default gen_random_uuid(),
-  agent_id text references icp_agents(id) on delete cascade,
-  workspace_id text not null default 'default',
-  signal text not null,
-  note text not null,
-  created_at timestamptz default now()
-);
-
+create index if not exists transcripts_meeting_id_idx on transcripts(meeting_id);
+create index if not exists transcripts_timestamp_idx on transcripts(timestamp_ms);
 create index if not exists memory_chunks_workspace_idx on memory_chunks(workspace_id);
 create index if not exists entities_workspace_idx on entities(workspace_id);
 create index if not exists relationships_workspace_idx on relationships(workspace_id);
-create index if not exists icp_agents_workspace_idx on icp_agents(workspace_id);
-create index if not exists agent_feedback_agent_idx on agent_feedback(agent_id);
 
--- Enable Row Level Security (set up policies per your auth model)
 alter table meetings enable row level security;
 alter table transcripts enable row level security;
 alter table summaries enable row level security;
@@ -129,10 +98,16 @@ alter table memory_chunks enable row level security;
 alter table entities enable row level security;
 alter table relationships enable row level security;
 alter table browser_sessions enable row level security;
-alter table icp_agents enable row level security;
-alter table agent_feedback enable row level security;
 
--- Allow service role full access (used by the API server)
+drop policy if exists "service_role_all" on meetings;
+drop policy if exists "service_role_all" on transcripts;
+drop policy if exists "service_role_all" on summaries;
+drop policy if exists "service_role_all" on meeting_contexts;
+drop policy if exists "service_role_all" on memory_chunks;
+drop policy if exists "service_role_all" on entities;
+drop policy if exists "service_role_all" on relationships;
+drop policy if exists "service_role_all" on browser_sessions;
+
 create policy "service_role_all" on meetings for all using (true);
 create policy "service_role_all" on transcripts for all using (true);
 create policy "service_role_all" on summaries for all using (true);
@@ -141,5 +116,3 @@ create policy "service_role_all" on memory_chunks for all using (true);
 create policy "service_role_all" on entities for all using (true);
 create policy "service_role_all" on relationships for all using (true);
 create policy "service_role_all" on browser_sessions for all using (true);
-create policy "service_role_all" on icp_agents for all using (true);
-create policy "service_role_all" on agent_feedback for all using (true);

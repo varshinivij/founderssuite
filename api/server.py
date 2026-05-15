@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from supabase import create_client, Client
 
 load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 logger = logging.getLogger("foundersuite-api")
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +42,12 @@ app.add_middleware(
 # Supabase client
 supabase: Optional[Client] = None
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_KEY = (
+    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    or os.getenv("SUPABASE_ANON_KEY")
+    or os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
+    or ""
+)
 if SUPABASE_URL and SUPABASE_URL != "PLACEHOLDER":
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -52,6 +58,7 @@ _summaries: dict[str, dict] = {}
 _intelligence_cache: dict[str, dict] = {}
 _simulation_sessions: dict[str, dict] = {}
 _meeting_contexts: dict[str, dict] = {}
+_icp_agents: dict[str, dict] = {}
 _memory_chunks: list[dict] = []
 _entities: dict[str, dict] = {}
 _relationships: list[dict] = []
@@ -62,6 +69,10 @@ _biased_corpus_embeddings: Optional[dict[str, list]] = None
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+BROWSER_USE_API_KEY = os.getenv("BROWSER_USE_API_KEY", "")
+BROWSER_USE_BASE_URL = os.getenv("BROWSER_USE_BASE_URL", "https://api.browser-use.com/api/v3").rstrip("/")
+BROWSER_USE_MODEL = os.getenv("BROWSER_USE_MODEL", "bu-mini")
+BROWSER_USE_BROWSER_PROFILE_ID = os.getenv("BROWSER_USE_BROWSER_PROFILE_ID", "")
 
 
 # ── Models ──────────────────────────────────────────────────────────────────
@@ -103,8 +114,32 @@ class SimulationPersona(BaseModel):
     responseStyle: Optional[str] = None
 
 
+class IcpAgentInput(BaseModel):
+    name: str
+    target_customer: str
+    market: str
+    pains: str
+    buying_triggers: str
+    objections: str
+    voice_id: Optional[str] = None
+
+
+class IcpAgentProfile(IcpAgentInput):
+    id: str
+    workspace_id: str = "default"
+    created_at: str
+    updated_at: str
+    reinforcement_count: int = 0
+
+
+class AgentFeedbackInput(BaseModel):
+    signal: Literal["positive", "negative", "correction"]
+    note: str
+
+
 class SimulationStartRequest(BaseModel):
-    persona: SimulationPersona
+    persona: Optional[SimulationPersona] = None
+    agent_id: Optional[str] = None
 
 
 class SimulationTurnRequest(BaseModel):
@@ -116,6 +151,15 @@ class BrowserSessionStartRequest(BaseModel):
     task: str = "Fill a generic operational form using workspace memory."
     workspace_id: str = "default"
     room_name: Optional[str] = None
+    agent_id: Optional[str] = None
+    survey_goal: Optional[str] = None
+
+
+class SurveyAutomationStartRequest(BaseModel):
+    target_url: str = "about:blank"
+    survey_goal: str = ""
+    workspace_id: str = "default"
+    agent_id: str
 
 
 class IntentState(BaseModel):
@@ -664,43 +708,132 @@ def _fallback_summary_report(segments: list[dict], context: Optional[dict] = Non
     return report
 
 
-def _fallback_simulation_answer(persona: dict, question: str, turn_count: int) -> str:
-    domains = persona.get("domains") or ["the target market"]
-    domain = ", ".join(domains[:2])
-    role = persona.get("role") or persona.get("profile", "").split(".")[0] or f"someone working in {domain}"
-    criteria = persona.get("buyingCriteria") or []
-    criteria_text = ", ".join(criteria[:3]) if criteria else "proof it fits my workflow"
-    skepticism = persona.get("skepticism") or "I am skeptical until I see a concrete workflow and real evidence."
+def _fallback_meeting_title(segments: list[dict], context: Optional[dict] = None) -> str:
+    context = context or {}
+    for key in ("target_customer", "objective", "hypothesis"):
+        value = str(context.get(key, "")).strip()
+        if value:
+            return value[:80]
+    for seg in segments:
+        text = _segment_text(seg)
+        if text:
+            return text[:80]
+    return "Customer Interview"
 
-    if re.search(r"\b(who are you|background|tell me about yourself|what do you do|role)\b", question, re.I):
-        return (
-            f"I am closest to a {role}. My day-to-day lens is {domain}, so I evaluate ideas around {criteria_text}. "
-            f"{skepticism}"
-        )
-    if turn_count <= 1:
-        return (
-            f"From my perspective as {role}, the biggest thing is whether this fits into a real {domain} workflow I already have. "
-            f"I would judge it on {criteria_text}, not just whether the idea sounds useful."
-        )
-    if re.search(r"\b(pay|price|cost|budget|buy)\b", question, re.I):
-        return (
-            f"I would not anchor on price until I understood the replacement value in my {domain} work. "
-            f"If it clearly improved {criteria_text}, I could justify budget, but I would compare it against the process and tools I already trust."
-        )
-    if re.search(r"\b(problem|pain|hard|frustrat|workflow|workaround)\b", question, re.I):
-        return (
-            f"The painful part in {domain} is usually the handoff between people, documents, and decisions. "
-            f"I can tolerate one clunky step, but repeated manual follow-up or unclear ownership is where I start looking for another option."
-        )
-    return (
-        f"I can see the appeal, but I would need a concrete example in my {domain} workflow. "
-        f"The deciding factor is whether it improves {criteria_text}; otherwise it risks becoming another nice demo that does not change behavior."
-    )
+
+def _generate_meeting_title(segments: list[dict], context: Optional[dict] = None) -> str:
+    fallback = _fallback_meeting_title(segments, context)
+    if not OPENAI_API_KEY or not segments:
+        return fallback
+    transcript_excerpt = "\n".join(
+        f"[{s.get('speaker', 'unknown').upper()}]: {_segment_text(s)}" for s in segments[:10]
+    )[:3200]
+    prompt = f"""Create a concise title for this customer discovery interview.
+
+Rules:
+- 4 to 9 words.
+- Use the actual topic or customer problem.
+- Do not include quotation marks.
+- Do not use generic titles like "Customer Interview".
+
+Interview setup:
+{_context_lines(context)}
+
+Transcript excerpt:
+{transcript_excerpt}
+
+Return only the title."""
+    try:
+        title = _openai_complete(prompt, max_tokens=60).strip().strip('"').strip("'")
+        title = re.sub(r"\s+", " ", title)
+        return title[:90] or fallback
+    except Exception as exc:
+        logger.warning("Meeting title generation degraded: %s", exc)
+        return fallback
+
+
+def _agent_to_persona(agent: dict) -> dict:
+    return {
+        "id": agent["id"],
+        "name": agent["name"],
+        "domains": [part.strip() for part in str(agent.get("market", "")).split(",") if part.strip()],
+        "profile": (
+            f"Target customer: {agent.get('target_customer', '')}\n"
+            f"Market: {agent.get('market', '')}\n"
+            f"Known pains: {agent.get('pains', '')}\n"
+            f"Buying triggers: {agent.get('buying_triggers', '')}\n"
+            f"Objections: {agent.get('objections', '')}"
+        ),
+        "role": agent.get("target_customer"),
+        "companyContext": agent.get("market"),
+        "buyingCriteria": [part.strip() for part in str(agent.get("buying_triggers", "")).split(",") if part.strip()],
+        "skepticism": agent.get("objections"),
+        "responseStyle": "Concise, specific, realistic, and grounded in the configured ICP.",
+    }
+
+
+def _agent_from_meeting(room_name: str, segments: list[dict], report: dict, title: str, workspace_id: str = "default") -> Optional[dict]:
+    context = _meeting_contexts.get(room_name, {})
+    customer_name = str(context.get("target_customer", "")).strip()
+    if not customer_name:
+        return None
+
+    findings = [item for item in (report or {}).get("findings", []) if isinstance(item, str)]
+    validations = [
+        item for item in (report or {}).get("validations", [])
+        if isinstance(item, dict)
+    ]
+    next_steps = [item for item in (report or {}).get("next_steps", []) if isinstance(item, str)]
+    objections = [
+        item.get("evidence", "")
+        for item in validations
+        if str(item.get("status", "")).lower() in {"unclear", "invalidated"}
+    ]
+    now = datetime.now().isoformat()
+    agent_id = f"customer_{_slug(customer_name)}"
+    existing = _icp_agents.get(agent_id, {})
+    existing_metadata = existing.get("metadata", {}) if isinstance(existing.get("metadata"), dict) else {}
+    source_rooms = list(dict.fromkeys([*existing_metadata.get("source_rooms", []), room_name]))
+    agent = {
+        **existing,
+        "id": agent_id,
+        "workspace_id": workspace_id,
+        "name": customer_name,
+        "target_customer": customer_name,
+        "market": str(context.get("objective") or title or "").strip(),
+        "pains": "; ".join(findings[:4]),
+        "buying_triggers": "; ".join(
+            str(item.get("hypothesis") or item.get("evidence") or "")
+            for item in validations[:4]
+            if item.get("hypothesis") or item.get("evidence")
+        ),
+        "objections": "; ".join(item for item in objections[:3] if item),
+        "voice_id": existing.get("voice_id"),
+        "reinforcement_count": int(existing.get("reinforcement_count", 0) or 0),
+        "metadata": {
+            **existing_metadata,
+            "source": "real_meetings",
+            "source_rooms": source_rooms,
+            "latest_room_name": room_name,
+            "latest_title": title,
+            "segment_count": len(segments),
+        },
+        "created_at": existing.get("created_at") or now,
+        "updated_at": now,
+    }
+    _icp_agents[agent_id] = agent
+    _upsert_entity("customer", customer_name, workspace_id, source="real_meetings", agent_id=agent_id, room_name=room_name)
+    if _use_supabase():
+        try:
+            supabase.table("icp_agents").upsert(agent).execute()
+        except Exception as exc:
+            logger.warning("Real customer agent upsert degraded: %s", exc)
+    return agent
 
 
 def _generate_simulation_answer(persona: dict, question: str, segments: list[dict]) -> str:
     if not OPENAI_API_KEY:
-        return _fallback_simulation_answer(persona, question, len(segments))
+        raise RuntimeError("OPENAI_API_KEY is required for ICP simulation responses")
 
     recent_context = "\n".join(
         f"[{s.get('speaker', 'unknown').upper()}]: {_segment_text(s)}" for s in segments[-8:]
@@ -735,10 +868,12 @@ Founder question:
     Participant answer:"""
     try:
         answer = _openai_complete(prompt, max_tokens=420)
-        return answer or _fallback_simulation_answer(persona, question, len(segments))
+        if not answer:
+            raise RuntimeError("OpenAI returned an empty ICP simulation answer")
+        return answer
     except Exception as exc:
         logger.warning("Simulation answer generation degraded: %s", exc)
-        return _fallback_simulation_answer(persona, question, len(segments))
+        raise
 
 
 def _slug(value: str) -> str:
@@ -913,7 +1048,7 @@ def _extract_memory(room_name: str, segments: list[dict], report: Optional[dict]
     context = _meeting_contexts.get(room_name, {})
     built_at = datetime.now().isoformat()
     call = _upsert_entity("call", room_name, workspace_id, room_name=room_name)
-    customer_name = context.get("target_customer") or (_simulation_sessions.get(room_name, {}).get("persona", {}) or {}).get("name") or "Unknown Customer"
+    customer_name = context.get("target_customer") or (_simulation_sessions.get(room_name, {}).get("persona", {}) or {}).get("name") or room_name
     customer = _upsert_entity("customer", customer_name, workspace_id, source_room=room_name)
     _add_relationship(customer["id"], call["id"], "participated_in", workspace_id, room_name)
 
@@ -1033,15 +1168,157 @@ def _serialize_browser_session(session: dict) -> dict:
         "action_log": session["action_log"],
         "created_at": session["created_at"],
         "updated_at": session["updated_at"],
+        "agent_id": session.get("agent_id"),
+        "survey_goal": session.get("survey_goal"),
+        "runner": session.get("runner"),
+        "degraded": session.get("degraded", []),
+        "cloud_session_id": session.get("cloud_session_id"),
+        "browser_use_task_id": session.get("browser_use_task_id"),
+        "live_url": session.get("live_url"),
+        "cloud_status": session.get("cloud_status"),
+        "label": session.get("label"),
     }
 
 
 def _browser_runner_status() -> tuple[str, Optional[str]]:
+    if BROWSER_USE_API_KEY:
+        return "browser_use_cloud", None
     if importlib.util.find_spec("browser_use"):
         return "browser_use", None
     if importlib.util.find_spec("playwright"):
         return "playwright", "browser_use_unavailable"
     return "staged", "browser_runner_unavailable"
+
+
+def _browser_use_headers() -> dict:
+    return {
+        "X-Browser-Use-API-Key": BROWSER_USE_API_KEY,
+        "Content-Type": "application/json",
+    }
+
+
+def _browser_use_create_cloud_task(session: dict) -> dict:
+    if not BROWSER_USE_API_KEY:
+        return {}
+
+    target_url = session.get("target_url") or "about:blank"
+    task_prompt = (
+        f"Open this survey or questionnaire URL: {target_url}\n\n"
+        f"Goal and role:\n{session['task']}\n\n"
+        "Act as a customer-research browser agent. Use the customer evidence in the task, fill only fields you can support, "
+        "leave uncertain fields blank or note uncertainty, and stop before any final submission. Do not enter credentials, "
+        "make purchases, upload files, or submit the form without explicit human approval."
+    )
+    session_payload = {
+        "task": task_prompt,
+        "model": BROWSER_USE_MODEL,
+        "keepAlive": True,
+        "maxCostUsd": 1,
+        "enableRecording": False,
+        "agentmail": False,
+    }
+    if BROWSER_USE_BROWSER_PROFILE_ID:
+        session_payload["profileId"] = BROWSER_USE_BROWSER_PROFILE_ID
+
+    with httpx.Client(timeout=30) as client:
+        session_response = client.post(
+            f"{BROWSER_USE_BASE_URL}/sessions",
+            headers=_browser_use_headers(),
+            json=session_payload,
+        )
+        session_response.raise_for_status()
+        cloud_session = session_response.json()
+        cloud_session_id = cloud_session.get("id") or cloud_session.get("sessionId") or cloud_session.get("session_id")
+        if not cloud_session_id:
+            raise ValueError("Browser Use did not return a session id")
+
+    return {
+        "cloud_session_id": cloud_session_id,
+        "browser_use_task_id": cloud_session_id,
+        "live_url": cloud_session.get("liveUrl") or cloud_session.get("live_url"),
+        "cloud_status": cloud_session.get("status") or "running",
+    }
+
+
+def _new_browser_session(req: BrowserSessionStartRequest, label: Optional[str] = None) -> dict:
+    session_id = f"browser_{uuid.uuid4().hex[:10]}"
+    now = datetime.now().isoformat()
+    runner, degraded = _browser_runner_status()
+    agent = _icp_agents.get(req.agent_id or "") if req.agent_id else None
+    session = {
+        "id": session_id,
+        "workspace_id": req.workspace_id,
+        "target_url": req.target_url,
+        "task": req.task,
+        "room_name": req.room_name,
+        "agent_id": req.agent_id,
+        "agent": agent,
+        "label": label,
+        "survey_goal": req.survey_goal,
+        "status": "running",
+        "current_url": req.target_url,
+        "screenshot_url": None,
+        "dom_snapshot_ref": f"{session_id}:dom:initial",
+        "requires_approval": False,
+        "runner": runner,
+        "degraded": [degraded] if degraded else [],
+        "cloud_session_id": None,
+        "browser_use_task_id": None,
+        "live_url": None,
+        "cloud_status": None,
+        "events": [],
+        "action_log": [],
+        "created_at": now,
+        "updated_at": now,
+    }
+    _browser_sessions[session_id] = session
+    _browser_event(session, "session_started", f"{label or 'Survey agent'} started.", confidence=1.0, degraded=session["degraded"])
+    if BROWSER_USE_API_KEY:
+        try:
+            cloud = _browser_use_create_cloud_task(session)
+            session.update(cloud)
+            if cloud.get("live_url"):
+                session["current_url"] = cloud["live_url"]
+            _browser_event(
+                session,
+                "browser_use_connected",
+                "Live browser session is available.",
+                confidence=0.92,
+                live_url=cloud.get("live_url"),
+                cloud_session_id=cloud.get("cloud_session_id"),
+            )
+        except Exception as exc:
+            logger.warning("Browser Use cloud session degraded: %s", exc)
+            session["degraded"].append("browser_use_cloud_unavailable")
+            _browser_event(
+                session,
+                "browser_use_degraded",
+                "Live browser session could not be created; using local staged execution.",
+                confidence=0.45,
+                degraded=session["degraded"],
+            )
+    _browser_event(session, "survey_loaded", "Opened the survey and prepared field mapping.", confidence=0.82, dom_snapshot_ref=session["dom_snapshot_ref"])
+    _browser_event(session, "memory_grounded", "Grounded candidate responses in customer memory.", confidence=0.74)
+    session["status"] = "waiting_for_approval"
+    session["requires_approval"] = True
+    session["updated_at"] = datetime.now().isoformat()
+    _browser_event(session, "approval_required", "Review generated survey responses before final submission.", confidence=0.66, requires_approval=True)
+    return session
+
+
+def _survey_agent_chat(agent: dict, goal: str, sessions: list[dict]) -> list[dict]:
+    langchain_available = importlib.util.find_spec("langchain") is not None
+    coordinator = "LangChain coordinator" if langchain_available else "Coordinator"
+    customer = agent.get("name", "Customer agent")
+    goal_text = goal.strip() or "collect market feedback"
+    messages = [
+        {"speaker": coordinator, "message": f"Planning a three-agent survey run for {customer}: {goal_text}.", "created_at": datetime.now().isoformat()},
+        {"speaker": "Agent 1", "message": "I will map the survey questions to known customer pains and buying triggers.", "created_at": datetime.now().isoformat()},
+        {"speaker": "Agent 2", "message": "I will cross-check answers against objections and avoid unsupported claims.", "created_at": datetime.now().isoformat()},
+        {"speaker": "Agent 3", "message": "I will prepare final responses and pause before submission for approval.", "created_at": datetime.now().isoformat()},
+        {"speaker": coordinator, "message": f"{len(sessions)} browser agents are running in parallel and sharing state through the coordinator.", "created_at": datetime.now().isoformat()},
+    ]
+    return messages
 
 
 async def _ensure_meeting(room_name: str) -> str:
@@ -1117,8 +1394,7 @@ async def save_meeting_context(ctx: MeetingContextRequest):
     payload.pop("room_name", None)
     _meeting_contexts[room_name] = payload
     if not _use_supabase() and room_name in _meetings:
-        title = payload.get("objective") or payload.get("target_customer") or room_name
-        _meetings[room_name].update({"title": title, "context": payload})
+        _meetings[room_name].update({"context": payload})
     return {"context": payload}
 
 
@@ -1246,9 +1522,100 @@ Interview setup:
     return response
 
 
+@app.get("/icp-agents")
+async def list_icp_agents(workspace_id: str = "default"):
+    if _use_supabase():
+        try:
+            result = (
+                supabase.table("icp_agents")
+                .select("*")
+                .eq("workspace_id", workspace_id)
+                .order("created_at", desc=True)
+                .execute()
+            )
+            agents = [
+                agent for agent in (result.data or [])
+                if isinstance(agent.get("metadata"), dict) and agent["metadata"].get("source") == "real_meetings"
+            ]
+            return {"agents": agents}
+        except Exception as exc:
+            logger.warning("ICP agent Supabase list degraded: %s", exc)
+    agents = [
+        agent for agent in _icp_agents.values()
+        if agent.get("workspace_id") == workspace_id
+        and isinstance(agent.get("metadata"), dict)
+        and agent["metadata"].get("source") == "real_meetings"
+    ]
+    agents.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+    return {"agents": agents}
+
+
+@app.post("/icp-agents")
+async def create_icp_agent(req: IcpAgentInput, workspace_id: str = "default"):
+    raise HTTPException(
+        status_code=405,
+        detail="ICP agents are derived from analyzed real meetings. Analyze a meeting with a target customer to create one.",
+    )
+
+
+@app.post("/icp-agents/{agent_id}/feedback")
+async def reinforce_icp_agent(agent_id: str, req: AgentFeedbackInput):
+    agent = _icp_agents.get(agent_id)
+    if not agent and _use_supabase():
+        result = supabase.table("icp_agents").select("*").eq("id", agent_id).execute()
+        agent = result.data[0] if result.data else None
+    if not agent:
+        raise HTTPException(status_code=404, detail="ICP agent not found")
+    note = req.note.strip()
+    if not note:
+        raise HTTPException(status_code=400, detail="Feedback note is required")
+    agent["reinforcement_count"] = int(agent.get("reinforcement_count", 0)) + 1
+    agent["updated_at"] = datetime.now().isoformat()
+    if _use_supabase():
+        try:
+            supabase.table("icp_agents").update({
+                "reinforcement_count": agent["reinforcement_count"],
+                "updated_at": agent["updated_at"],
+            }).eq("id", agent_id).execute()
+            supabase.table("agent_feedback").insert({
+                "agent_id": agent_id,
+                "workspace_id": agent.get("workspace_id", "default"),
+                "signal": req.signal,
+                "note": note,
+            }).execute()
+        except Exception as exc:
+            logger.warning("ICP agent feedback update degraded: %s", exc)
+    _icp_agents[agent_id] = agent
+
+    room_name = f"agent_feedback_{agent_id}"
+    await _ensure_meeting(room_name)
+    await store_transcript(TranscriptSegment(
+        room_name=room_name,
+        speaker="founder",
+        text=f"Feedback signal: {req.signal}. {note}",
+    ))
+    memory = _extract_memory(room_name, (await get_transcript(room_name))["segments"], {
+        "findings": [note],
+    }, agent.get("workspace_id", "default"))
+    return {"agent": agent, "memory": memory}
+
+
 @app.post("/simulation/start")
 async def start_simulation(req: SimulationStartRequest):
-    persona = req.persona.model_dump()
+    agent = None
+    if req.agent_id:
+        agent = _icp_agents.get(req.agent_id)
+        if not agent and _use_supabase():
+            result = supabase.table("icp_agents").select("*").eq("id", req.agent_id).execute()
+            agent = result.data[0] if result.data else None
+        if not agent:
+            raise HTTPException(status_code=404, detail="ICP agent not found")
+        _icp_agents[agent["id"]] = agent
+        persona = _agent_to_persona(agent)
+    elif req.persona:
+        persona = req.persona.model_dump()
+    else:
+        raise HTTPException(status_code=400, detail="agent_id is required")
     persona_id = re.sub(r"[^a-zA-Z0-9]+", "_", persona["id"]).strip("_")[:24] or "persona"
     if not persona["name"].strip() or not persona["profile"].strip():
         raise HTTPException(status_code=400, detail="Persona is incomplete")
@@ -1260,6 +1627,7 @@ async def start_simulation(req: SimulationStartRequest):
         "meeting_id": meeting_id,
         "is_simulated": True,
         "persona": persona,
+        "agent": agent,
         "created_at": datetime.now().isoformat(),
     }
     _simulation_sessions[room_name] = session
@@ -1268,11 +1636,13 @@ async def start_simulation(req: SimulationStartRequest):
             "title": f"Simulation with {persona['name']}",
             "is_simulated": True,
             "persona": persona,
+            "agent": agent,
         })
 
     intelligence = await analyze_intelligence(room_name)
     return {
         "room_name": room_name,
+        "agent": agent,
         "persona": persona,
         "segments": [],
         "intelligence": intelligence,
@@ -1292,8 +1662,11 @@ async def simulation_turn(room_name: str, req: SimulationTurnRequest):
     await store_transcript(TranscriptSegment(room_name=room_name, speaker="founder", text=question))
     transcript_data = await get_transcript(room_name)
     persona = session["persona"]
-    answer = _generate_simulation_answer(persona, question, transcript_data["segments"])
-    await store_transcript(TranscriptSegment(room_name=room_name, speaker="mock_user", text=answer))
+    try:
+        answer = _generate_simulation_answer(persona, question, transcript_data["segments"])
+    except Exception:
+        raise HTTPException(status_code=503, detail="ICP simulation response generation is unavailable")
+    await store_transcript(TranscriptSegment(room_name=room_name, speaker="icp_agent", text=answer))
 
     updated = await get_transcript(room_name)
     intelligence = await analyze_intelligence(room_name)
@@ -1356,35 +1729,47 @@ TRANSCRIPT:
         report = _fallback_summary_report(segments, context, "AI summary unavailable; generated deterministic fallback.")
 
     meeting_id = await _ensure_meeting(room_name)
+    title = _generate_meeting_title(segments, context)
 
     if _use_supabase():
+        supabase.table("meetings").update({"title": title}).eq("id", meeting_id).execute()
         existing = supabase.table("summaries").select("id").eq("meeting_id", meeting_id).execute()
+        summary_payload = {
+            "report": report,
+            "status": "ready",
+            "model": OPENAI_MODEL if OPENAI_API_KEY else "deterministic_fallback",
+            "generated_by": "api",
+            "generated_at": datetime.now().isoformat(),
+        }
         if existing.data:
-            supabase.table("summaries").update({"report": report}).eq("meeting_id", meeting_id).execute()
+            supabase.table("summaries").update(summary_payload).eq("meeting_id", meeting_id).execute()
         else:
-            supabase.table("summaries").insert({"meeting_id": meeting_id, "report": report}).execute()
+            supabase.table("summaries").insert({"meeting_id": meeting_id, **summary_payload}).execute()
     else:
         _summaries[room_name] = report
+        _meetings.setdefault(room_name, {"id": room_name, "room_name": room_name, "created_at": datetime.now().isoformat()})
+        _meetings[room_name]["title"] = title
 
     try:
         _extract_memory(room_name, segments, report)
     except Exception as exc:
         logger.warning("Memory build after summary degraded: %s", exc)
+    agent = _agent_from_meeting(room_name, segments, report, title)
 
-    return {"report": report}
+    return {"report": report, "title": title, "agent": agent}
 
 
 @app.get("/summary/{room_name}")
 async def get_summary(room_name: str):
     if _use_supabase():
-        meetings = supabase.table("meetings").select("id").eq("room_name", room_name).execute()
+        meetings = supabase.table("meetings").select("id,title").eq("room_name", room_name).execute()
         if not meetings.data:
-            return {"report": None}
+            return {"report": None, "title": None}
         meeting_id = meetings.data[0]["id"]
         result = supabase.table("summaries").select("report").eq("meeting_id", meeting_id).execute()
-        return {"report": result.data[0]["report"] if result.data else None}
+        return {"report": result.data[0]["report"] if result.data else None, "title": meetings.data[0].get("title")}
     else:
-        return {"report": _summaries.get(room_name)}
+        return {"report": _summaries.get(room_name), "title": _meetings.get(room_name, {}).get("title")}
 
 
 @app.post("/memory/build/{room_name}")
@@ -1510,36 +1895,43 @@ async def entity_detail(entity_id: str):
 
 @app.post("/browser/session/start")
 async def start_browser_session(req: BrowserSessionStartRequest):
-    session_id = f"browser_{uuid.uuid4().hex[:10]}"
-    now = datetime.now().isoformat()
-    runner, degraded = _browser_runner_status()
-    session = {
-        "id": session_id,
-        "workspace_id": req.workspace_id,
-        "target_url": req.target_url,
-        "task": req.task,
-        "room_name": req.room_name,
-        "status": "running",
-        "current_url": req.target_url,
-        "screenshot_url": None,
-        "dom_snapshot_ref": f"{session_id}:dom:initial",
-        "requires_approval": False,
-        "runner": runner,
-        "degraded": [degraded] if degraded else [],
-        "events": [],
-        "action_log": [],
-        "created_at": now,
-        "updated_at": now,
-    }
-    _browser_sessions[session_id] = session
-    _browser_event(session, "session_started", f"Browser automation session started with {runner} runner.", confidence=1.0, degraded=session["degraded"])
-    _browser_event(session, "dom_extracted", "Extracted form labels, inputs, and validation hints.", confidence=0.82, dom_snapshot_ref=session["dom_snapshot_ref"])
-    _browser_event(session, "memory_mapped", "Mapped candidate fields to workspace memory.", confidence=0.74)
-    session["status"] = "waiting_for_approval"
-    session["requires_approval"] = True
-    session["updated_at"] = datetime.now().isoformat()
-    _browser_event(session, "approval_required", "Review filled values before final submission.", confidence=0.66, requires_approval=True)
+    session = _new_browser_session(req, "Survey agent")
     return {"session": _serialize_browser_session(session)}
+
+
+@app.post("/browser/survey/start")
+async def start_survey_automation(req: SurveyAutomationStartRequest):
+    agent = _icp_agents.get(req.agent_id)
+    if not agent and _use_supabase():
+        result = supabase.table("icp_agents").select("*").eq("id", req.agent_id).execute()
+        agent = result.data[0] if result.data else None
+    if not agent:
+        raise HTTPException(status_code=404, detail="Customer agent not found")
+    if not isinstance(agent.get("metadata"), dict) or agent["metadata"].get("source") != "real_meetings":
+        raise HTTPException(status_code=400, detail="Survey automation requires a customer agent derived from real meetings")
+    _icp_agents[agent["id"]] = agent
+
+    roles = [
+        ("Agent 1", "Map survey questions to real customer pains and workflow evidence."),
+        ("Agent 2", "Check answers against objections, uncertainty, and unsupported assumptions."),
+        ("Agent 3", "Draft final survey responses and hold submission for human approval."),
+    ]
+    sessions = [
+        _new_browser_session(BrowserSessionStartRequest(
+            target_url=req.target_url,
+            task=f"{role_task} Customer: {agent['name']}. Goal: {req.survey_goal or 'Collect market feedback.'}",
+            workspace_id=req.workspace_id,
+            agent_id=req.agent_id,
+            survey_goal=req.survey_goal,
+        ), label)
+        for label, role_task in roles
+    ]
+    chat = _survey_agent_chat(agent, req.survey_goal, sessions)
+    return {
+        "sessions": [_serialize_browser_session(session) for session in sessions],
+        "chat": chat,
+        "orchestrator": "langchain" if importlib.util.find_spec("langchain") else "staged",
+    }
 
 
 @app.get("/browser/session/{session_id}")

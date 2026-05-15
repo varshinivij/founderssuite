@@ -1,16 +1,14 @@
 import { type CSSProperties, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import {
   buildMemory,
-  fetchBrowserEvents,
   fetchGraph,
   fetchMeetings,
   fetchMemoryTimeline,
   fetchSummary,
   searchMemory,
-  startBrowserSession,
-  updateBrowserSession,
 } from '../lib/api';
-import type { BrowserEvent, BrowserSession, GraphEdge, GraphNode, Meeting, MemoryChunk, SummaryReport } from '../lib/api';
+import type { GraphEdge, GraphNode, Meeting, MemoryChunk, SummaryReport } from '../lib/api';
 import PipelinePanel from '../components/dashboard/PipelinePanel';
 import MetricsPanel from '../components/dashboard/MetricsPanel';
 
@@ -36,7 +34,7 @@ const dashboardTheme = {
   '--text-muted': 'rgba(88,77,102,0.72)',
 } as CSSProperties;
 
-type DashboardTab = 'overview' | 'memory' | 'browser';
+type DashboardTab = 'overview' | 'memory';
 
 const NODE_COLORS: Record<string, string> = {
   customer: '#6b2d8b',
@@ -277,98 +275,8 @@ function MemoryGraphView({ selectedRoom }: { selectedRoom: string | null }) {
   );
 }
 
-function BrowserWorkflowView({ selectedRoom }: { selectedRoom: string | null }) {
-  const [targetUrl, setTargetUrl] = useState('https://example.com/vendor-onboarding');
-  const [task, setTask] = useState('Fill a vendor onboarding form using interview memory and pause before submission.');
-  const [session, setSession] = useState<BrowserSession | null>(null);
-  const [events, setEvents] = useState<BrowserEvent[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function beginSession() {
-    setBusy(true);
-    setError(null);
-    try {
-      const { session: started } = await startBrowserSession({ target_url: targetUrl, task, workspace_id: 'default', room_name: selectedRoom });
-      setSession(started);
-      setEvents(started.action_log);
-    } catch {
-      setError('Could not start browser automation.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function applyAction(action: 'pause' | 'resume' | 'takeover' | 'approve-submission') {
-    if (!session) return;
-    setBusy(true);
-    try {
-      const { session: updated } = await updateBrowserSession(session.id, action);
-      const { events: nextEvents } = await fetchBrowserEvents(session.id);
-      setSession(updated);
-      setEvents(nextEvents);
-    } catch {
-      setError('Could not update browser session.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="flex flex-1 overflow-hidden" style={{ background: '#ffffff', borderLeft: '1px solid rgba(201,184,216,0.8)', borderRight: '1px solid rgba(201,184,216,0.8)' }}>
-      <main className="flex-1 flex flex-col overflow-hidden" style={{ padding: 20 }}>
-        <div className="grid" style={{ gridTemplateColumns: '1fr 1.4fr auto', gap: 10, marginBottom: 14 }}>
-          <input value={targetUrl} onChange={event => setTargetUrl(event.target.value)} style={{ border: '1px solid var(--border-mid)', borderRadius: 12, padding: '10px 12px', color: 'var(--text-dim)', background: '#faf9fd' }} />
-          <input value={task} onChange={event => setTask(event.target.value)} style={{ border: '1px solid var(--border-mid)', borderRadius: 12, padding: '10px 12px', color: 'var(--text-dim)', background: '#faf9fd' }} />
-          <button onClick={beginSession} disabled={busy} className="fs-btn-primary">{busy ? 'Starting...' : 'Start session'}</button>
-        </div>
-        {error && <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 10 }}>{error}</div>}
-
-        <div className="flex-1 grid overflow-hidden" style={{ gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16 }}>
-          <section style={{ border: '1px solid var(--border-subtle)', borderRadius: 16, background: '#faf9fd', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-subtle)', background: '#ffffff' }}>
-              <span className="fs-label">AI Browser Session</span>
-              <span className="fs-badge fs-badge-purple">{session?.status ?? 'idle'}</span>
-            </div>
-            <div className="flex-1 flex items-center justify-center text-center" style={{ color: 'var(--text-1)', padding: 28 }}>
-              <div style={{ width: 'min(560px, 100%)', border: '1px dashed rgba(201,184,216,0.9)', borderRadius: 18, background: '#ffffff', padding: 32 }}>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: 'var(--purple)', marginBottom: 12 }}>{session?.current_url ?? 'No browser session running'}</div>
-                <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Browser workspace</div>
-                <p style={{ color: 'var(--text-muted)', maxWidth: 460, lineHeight: 1.5, margin: '0 auto' }}>
-                  Session events and approval checkpoints appear here while the workflow runs.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <aside className="flex flex-col overflow-hidden" style={{ border: '1px solid var(--border-subtle)', borderRadius: 16, background: '#ffffff' }}>
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-              <p className="fs-label">Human Controls</p>
-            </div>
-            <div className="p-4 flex flex-col gap-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-              <button onClick={() => applyAction('pause')} disabled={!session || busy} className="fs-btn-ghost">Pause</button>
-              <button onClick={() => applyAction('resume')} disabled={!session || busy} className="fs-btn-ghost">Resume</button>
-              <button onClick={() => applyAction('takeover')} disabled={!session || busy} className="fs-btn-ghost">Take over</button>
-              <button onClick={() => applyAction('approve-submission')} disabled={!session?.requires_approval || busy} className="fs-btn-primary">Approve submission</button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-              {events.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Action events will appear here.</p>
-              ) : events.map(event => (
-                <div key={event.id} style={{ border: '1px solid var(--border-subtle)', borderRadius: 12, padding: 10, background: event.requires_approval ? 'rgba(247,217,196,0.28)' : '#faf9fd' }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: event.requires_approval ? 'var(--gold)' : 'var(--purple)', textTransform: 'uppercase', marginBottom: 5 }}>{event.type}</div>
-                  <div style={{ color: 'var(--text-dim)', fontSize: 12, lineHeight: 1.4 }}>{event.message}</div>
-                </div>
-              ))}
-            </div>
-          </aside>
-        </div>
-      </main>
-    </div>
-  );
-}
-
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<DashboardTab>('overview');
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
@@ -413,19 +321,10 @@ export default function Dashboard() {
     };
   }, [selectedRoom]);
 
-  const handleRegenerate = () => {
-    if (!selectedRoom) return;
-    setIsGenerating(true);
-    fetch(`${API}/summary/${selectedRoom}`, { method: 'POST' })
-      .then(r => r.json())
-      .then(d => { setReport(d.report); setIsGenerating(false); });
-  };
-
   const statusColor = report ? 'var(--green)' : isGenerating ? 'var(--purple)' : 'var(--text-muted)';
-  const statusLabel = report ? 'Insights ready' : isGenerating ? 'Reviewing' : 'Awaiting interview';
+  const statusLabel = report ? 'Insights ready' : isGenerating ? 'Loading' : 'Awaiting interview';
   const latestMeeting = meetings.find(m => m.room_name === selectedRoom);
   const reviewCount = report?.findings?.length ?? 0;
-  const feedbackCount = report?.bias_flags?.length ?? 0;
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden" style={{ ...dashboardTheme, background: '#faf9fd', padding: 24 }}>
@@ -445,7 +344,6 @@ export default function Dashboard() {
           {[
             { id: 'overview' as const, label: 'Overview', count: null },
             { id: 'memory' as const, label: 'Memory Graph', count: reviewCount },
-            { id: 'browser' as const, label: 'Browser Workflow', count: feedbackCount },
           ].map(item => {
             const active = tab === item.id;
             return (
@@ -494,8 +392,8 @@ export default function Dashboard() {
               {statusLabel}
             </span>
           </div>
-          <button onClick={handleRegenerate} disabled={!selectedRoom} className="fs-btn-primary">
-            Analyze interview
+          <button onClick={() => selectedRoom && navigate(`/analysis/${selectedRoom}`)} disabled={!selectedRoom} className="fs-btn-primary">
+            Open analysis
           </button>
         </div>
       </div>
@@ -554,7 +452,6 @@ export default function Dashboard() {
       )}
 
       {tab === 'memory' && <MemoryGraphView selectedRoom={selectedRoom} />}
-      {tab === 'browser' && <BrowserWorkflowView selectedRoom={selectedRoom} />}
     </div>
   );
 }

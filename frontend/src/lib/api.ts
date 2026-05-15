@@ -72,16 +72,42 @@ export async function sendSimulationTurn(roomName: string, question: string) {
   return res.json() as Promise<SimulationTurnResponse>;
 }
 
+export async function fetchIcpAgents() {
+  const res = await fetch(`${BASE}/icp-agents`);
+  if (!res.ok) return { agents: [] };
+  return res.json() as Promise<{ agents: IcpAgentProfile[] }>;
+}
+
+export async function startIcpSimulation(agentId: string) {
+  const res = await fetch(`${BASE}/simulation/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agent_id: agentId }),
+  });
+  if (!res.ok) throw new Error('Failed to start simulation');
+  return res.json() as Promise<SimulationSession>;
+}
+
+export async function sendAgentFeedback(agentId: string, input: AgentFeedbackInput) {
+  const res = await fetch(`${BASE}/icp-agents/${encodeURIComponent(agentId)}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error('Agent feedback failed');
+  return res.json() as Promise<{ agent: IcpAgentProfile; memory: MemoryBuildResponse }>;
+}
+
 export async function generateSummary(roomName: string) {
   const res = await fetch(`${BASE}/summary/${roomName}`, { method: 'POST' });
   if (!res.ok) throw new Error('Summary generation failed');
-  return res.json() as Promise<{ report: SummaryReport }>;
+  return res.json() as Promise<SummaryResponse>;
 }
 
 export async function fetchSummary(roomName: string) {
   const res = await fetch(`${BASE}/summary/${roomName}`);
   if (!res.ok) return { report: null };
-  return res.json() as Promise<{ report: SummaryReport | null }>;
+  return res.json() as Promise<SummaryResponse>;
 }
 
 export async function fetchMeetings() {
@@ -131,6 +157,16 @@ export async function startBrowserSession(input: BrowserSessionStartInput) {
   return res.json() as Promise<{ session: BrowserSession }>;
 }
 
+export async function startSurveyAutomation(input: SurveyAutomationStartInput) {
+  const res = await fetch(`${BASE}/browser/survey/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error('Survey automation start failed');
+  return res.json() as Promise<{ sessions: BrowserSession[]; chat: AgentChatMessage[]; orchestrator: string }>;
+}
+
 export async function fetchBrowserSession(sessionId: string) {
   const res = await fetch(`${BASE}/browser/session/${sessionId}`);
   if (!res.ok) throw new Error('Browser session lookup failed');
@@ -147,6 +183,27 @@ export async function updateBrowserSession(sessionId: string, action: 'pause' | 
   const res = await fetch(`${BASE}/browser/session/${sessionId}/${action}`, { method: 'POST' });
   if (!res.ok) throw new Error('Browser session update failed');
   return res.json() as Promise<{ session: BrowserSession }>;
+}
+
+export interface IcpAgentProfile {
+  id: string;
+  workspace_id: string;
+  name: string;
+  target_customer: string;
+  market: string;
+  pains: string;
+  buying_triggers: string;
+  objections: string;
+  voice_id?: string;
+  created_at: string;
+  updated_at: string;
+  reinforcement_count: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface AgentFeedbackInput {
+  signal: 'positive' | 'negative' | 'correction';
+  note: string;
 }
 
 export interface Meeting {
@@ -239,6 +296,7 @@ export interface SimulationPersona {
 
 export interface SimulationSession {
   room_name: string;
+  agent?: IcpAgentProfile;
   persona: SimulationPersona;
   segments: Segment[];
   intelligence: LiveIntelligenceState;
@@ -264,6 +322,11 @@ export interface SummaryReport {
   };
   raw?: string;
   error?: string;
+}
+
+export interface SummaryResponse {
+  report: SummaryReport | null;
+  title?: string | null;
 }
 
 export interface MemoryChunk {
@@ -319,6 +382,15 @@ export interface BrowserEvent {
   created_at: string;
   confidence?: number;
   requires_approval?: boolean;
+  live_url?: string | null;
+  cloud_session_id?: string | null;
+  degraded?: string[];
+}
+
+export interface AgentChatMessage {
+  speaker: string;
+  message: string;
+  created_at: string;
 }
 
 export interface BrowserSession {
@@ -334,6 +406,15 @@ export interface BrowserSession {
   action_log: BrowserEvent[];
   created_at: string;
   updated_at: string;
+  agent_id?: string | null;
+  survey_goal?: string | null;
+  runner?: string | null;
+  degraded?: string[];
+  cloud_session_id?: string | null;
+  browser_use_task_id?: string | null;
+  live_url?: string | null;
+  cloud_status?: string | null;
+  label?: string | null;
 }
 
 export interface BrowserSessionStartInput {
@@ -341,4 +422,13 @@ export interface BrowserSessionStartInput {
   task: string;
   workspace_id?: string;
   room_name?: string | null;
+  agent_id?: string | null;
+  survey_goal?: string | null;
+}
+
+export interface SurveyAutomationStartInput {
+  target_url: string;
+  survey_goal: string;
+  workspace_id?: string;
+  agent_id: string;
 }

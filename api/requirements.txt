@@ -8,3 +8,4 @@ sentence-transformers
 pinecone
 browser-use
 playwright
+langchain
