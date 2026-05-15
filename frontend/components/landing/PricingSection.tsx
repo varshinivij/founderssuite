@@ -16,7 +16,7 @@ export function PricingSection() {
           <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-8">
               <div className="text-xs font-bold uppercase tracking-widest text-violet-700">B2C domains</div>
-              <div className="mt-2 text-xl font-bold text-slate-900">Consumer &amp; prosumer</div>
+              <div className="mt-2 text-xl font-bold text-slate-900">Consumer</div>
               <p className="mt-2 text-sm text-slate-600">
                 Lifestyle, education, creator tools, wellness, and other primarily consumer-facing products.
               </p>

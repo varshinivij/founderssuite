@@ -8,7 +8,6 @@ import {
   BadgeCheck,
   Briefcase,
   Calendar,
-  DollarSign,
   Layers,
   Pencil,
   Star,
@@ -49,13 +48,8 @@ export default function TesterProfilePage() {
         value: String(profile.projectsTested ?? 8),
         label: "Posts Made",
       },
-      {
-        icon: <DollarSign className="text-[#8b5cf6]" size={18} />,
-        value: `$${profile.hourlyRate ?? 25}/hr`,
-        label: "Compensation",
-      },
     ],
-    [profile.hourlyRate, profile.projectsTested, profile.qualityScore],
+    [profile.projectsTested, profile.qualityScore],
   );
 
   const tags = (profile.tags ?? profile.skills ?? []).slice(0, 8);
@@ -170,16 +164,10 @@ export default function TesterProfilePage() {
                 <Pencil size={16} />
                 Edit
               </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-full bg-[#8b5cf6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#7c3aed]"
-              >
-                Invite to Testing
-              </button>
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {stats.map((s) => (
               <div
                 key={s.label}
