@@ -17,7 +17,7 @@ export function HeroSectionV2({ role }: { role: "founder" | "tester" }) {
             "FoundersSuite transforms the exhausting process of market validation into a centralized, transparent, and frictionless system.",
           ctaA: "Join as Founder",
           ctaB: "Login",
-          ctaALink: "/signup?role=founder",
+          ctaALink: "/signup/founder",
           ctaBLink: "/login",
         }
       : {
@@ -27,7 +27,7 @@ export function HeroSectionV2({ role }: { role: "founder" | "tester" }) {
             "Share your real-world experience. Match with founders who need your insight. Get paid.",
           ctaA: "Join as Tester",
           ctaB: "Login",
-          ctaALink: "/signup?role=tester",
+          ctaALink: "/signup/tester",
           ctaBLink: "/login",
         };
 

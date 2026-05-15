@@ -2,6 +2,21 @@
 
 export type UserRole = "founder" | "tester";
 
+/** Captured on founder signup (stored with session user in mock mode). */
+export type FounderSignupProfile = {
+  company: string;
+  industry: string;
+  location: string;
+  shortBio: string;
+  socialUrl: string;
+};
+
+/** Captured on tester signup (stored with session user in mock mode). */
+export type TesterSignupProfile = {
+  shortBio: string;
+  industries: string[];
+};
+
 export interface User {
   id: string;
   email: string;
@@ -9,6 +24,8 @@ export interface User {
   role: UserRole;
   createdAt: string;
   avatar?: string;
+  founderSignup?: FounderSignupProfile;
+  testerSignup?: TesterSignupProfile;
 }
 
 export interface FounderProfile extends User {

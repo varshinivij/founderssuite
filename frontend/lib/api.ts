@@ -1,7 +1,9 @@
 import type {
   Agent,
   CommunityPost,
+  FounderSignupProfile,
   Match,
+  TesterSignupProfile,
   User,
   UserStory,
   ValidationForm,
@@ -29,9 +31,27 @@ export async function createUser(data: {
   email: string;
   name: string;
   role?: User["role"];
+  founderSignup?: FounderSignupProfile;
+  testerSignup?: TesterSignupProfile;
 }): Promise<User> {
-  if (USE_MOCK || USE_MOCK_USERS)
-    return { ...mockData.mockUser, ...data, role: data.role ?? "founder" };
+  if (USE_MOCK || USE_MOCK_USERS) {
+    const role = data.role ?? "founder";
+    const base: User = {
+      ...mockData.mockUser,
+      id: `user_${role}_${Date.now()}`,
+      email: data.email,
+      name: data.name,
+      role,
+      createdAt: new Date().toISOString(),
+    };
+    if (role === "founder" && data.founderSignup) {
+      return { ...base, founderSignup: data.founderSignup, testerSignup: undefined };
+    }
+    if (role === "tester" && data.testerSignup) {
+      return { ...base, testerSignup: data.testerSignup, founderSignup: undefined };
+    }
+    return { ...base, founderSignup: undefined, testerSignup: undefined };
+  }
 
   const res = await fetch(`${API_BASE_URL}/users`, {
     method: "POST",

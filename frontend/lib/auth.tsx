@@ -9,7 +9,12 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import type { User, UserRole } from "@/types";
+import type {
+  FounderSignupProfile,
+  TesterSignupProfile,
+  User,
+  UserRole,
+} from "@/types";
 import { createUser } from "@/lib/api";
 
 type AuthState = {
@@ -21,6 +26,8 @@ type AuthState = {
     name: string;
     role: UserRole;
     password: string;
+    founderSignup?: FounderSignupProfile;
+    testerSignup?: TesterSignupProfile;
   }) => Promise<void>;
   logout: () => void;
 };
@@ -74,12 +81,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signup = useCallback(
-    async (params: { email: string; name: string; role: UserRole; password: string }) => {
-      // Create backend user when mock-users is disabled; createUser() handles the toggle.
+    async (params: {
+      email: string;
+      name: string;
+      role: UserRole;
+      password: string;
+      founderSignup?: FounderSignupProfile;
+      testerSignup?: TesterSignupProfile;
+    }) => {
       const created = await createUser({
         email: params.email,
         name: params.name,
         role: params.role,
+        founderSignup: params.founderSignup,
+        testerSignup: params.testerSignup,
       });
       setUser(created);
       writeStoredUser(created);

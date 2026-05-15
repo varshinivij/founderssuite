@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,21 @@ export default function LoginPage() {
       >
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
+
+      <div className="border-t border-slate-200 pt-5 text-center text-sm text-slate-600">
+        <p>New here?</p>
+        <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+          <Link href="/signup/founder" className="font-semibold text-violet-700 hover:text-violet-900">
+            Join as founder
+          </Link>
+          <span className="text-slate-400" aria-hidden>
+            ·
+          </span>
+          <Link href="/signup/tester" className="font-semibold text-violet-700 hover:text-violet-900">
+            Join as tester
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
