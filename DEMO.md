@@ -324,9 +324,61 @@ You land on a **"Set up the interview"** screen — a 2-column form you must fil
 
 Click **Join Meeting** (bottom right of the form).
 
-The live room opens. Speak into your microphone — your speech is transcribed in real time and the AI coaching panel updates live with the same signals as the simulator (bias flags, quality score, suggested follow-ups).
+The live room opens. Speak clearly into your microphone — your speech is transcribed in real time and the AI coaching panel on the right updates live.
 
-When done, click **Generate insights** (top right) to save the report to Insights.
+**Speak these lines out loud, one at a time. Pause after each to let the transcript catch up.**
+
+---
+
+**Opening — build context (say this first):**
+> "Thanks for joining. I'm going to ask you about your current workflows — there are no right or wrong answers, I'm just trying to understand how things work today. Let's start from the beginning."
+
+---
+
+**Question 1 — current workflow (neutral):**
+> "Walk me through what happens the moment a deal closes at your company. What does the handoff from sales to customer success actually look like?"
+
+*Wait for transcription to appear, then continue.*
+
+---
+
+**Question 2 — probe for pain (neutral):**
+> "Has there ever been a time when something important got lost in that handoff — context, commitments, or expectations that the CS team didn't know about?"
+
+*Watch the right panel — bias score should stay low, quality score should rise.*
+
+---
+
+**Question 3 — quantify the problem:**
+> "When that happens, what's the actual impact? Does it slow down onboarding, create friction with the customer, or something else?"
+
+---
+
+**Question 4 — current workaround:**
+> "What does your team do today to try to prevent that from happening?"
+
+---
+
+**Question 5 — test for motivation (intentionally slightly leading — watch for bias flag):**
+> "So would you say your team would definitely benefit from a tool that automated this?"
+
+*The AI coach should flag this as a leading question. The right panel will highlight it in orange — this is intentional to demonstrate the bias detection feature.*
+
+---
+
+**Question 6 — neutral reframe after the flag:**
+> "Let me rephrase — if a tool existed that automatically packaged deal context and sent it to the CS team the moment a close happened, what would make you actually trust it and use it?"
+
+*Quality score should recover. Suggested follow-ups will update.*
+
+---
+
+**Closing:**
+> "That's really helpful. Last question — on a scale of one to five, how painful is this problem for your team today?"
+
+---
+
+After speaking all questions, click **Generate insights** (top right of the header) to save the full report and be redirected to Insights.
 
 ---
 
