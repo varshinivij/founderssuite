@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Header } from "@/components/dashboard/Header";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -14,6 +14,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const role = user?.role ?? "founder";
+
+  useEffect(() => {
+    if (isLoading || !user || !pathname) return;
+    if (user.role !== "tester") return;
+    if (pathname === "/community" || pathname.startsWith("/community/")) {
+      const suffix = pathname === "/community" ? "" : pathname.slice("/community".length);
+      router.replace(`/tester/community${suffix}`);
+    }
+  }, [isLoading, user, pathname, router]);
 
   const isAllowed = useMemo(() => {
     if (!pathname) return true;
@@ -37,7 +46,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAllowed) {
-    router.replace(role === "founder" ? "/founder/dashboard" : "/tester/feed");
+    router.replace(role === "founder" ? "/founder/dashboard" : "/tester/matches");
     return null;
   }
 

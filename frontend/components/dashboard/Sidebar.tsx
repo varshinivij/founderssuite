@@ -10,7 +10,6 @@ import {
   Settings,
   Users,
   MessageSquare,
-  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -36,17 +35,15 @@ export function Sidebar({
           { href: "/founder/dashboard", label: "Dashboard", icon: <LayoutGrid /> },
           { href: "/founder/matches", label: "Matches", icon: <Gauge /> },
           { href: "/founder/forms/new", label: "New study", icon: <FileText /> },
-          { href: "/founder/feedback", label: "Feedback", icon: <Inbox /> },
           { href: "/founder/profile", label: "Profile", icon: <Users /> },
           { href: "/founder/settings", label: "Settings", icon: <Settings /> },
           { href: "/agents", label: "AI Agents", icon: <Bot /> },
         ]
       : [
-          { href: "/tester/feed", label: "Feed", icon: <LayoutGrid /> },
+          { href: "/tester/community", label: "Community", icon: <MessageSquare /> },
           { href: "/tester/matches", label: "Matches", icon: <Gauge /> },
           { href: "/tester/profile", label: "Profile", icon: <Users /> },
           { href: "/tester/settings", label: "Settings", icon: <Settings /> },
-          { href: "/community", label: "Community", icon: <MessageSquare /> },
           { href: "/agents", label: "AI Agents", icon: <Bot /> },
         ];
 

@@ -139,7 +139,7 @@ export function TesterSignupForm() {
                 industries: [...industries],
               },
             });
-            router.replace("/tester/feed");
+            router.replace("/tester/matches");
           } finally {
             setIsSubmitting(false);
           }

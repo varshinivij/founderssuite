@@ -5,7 +5,14 @@ import Link from "next/link";
 import { Heart, Share2 } from "lucide-react";
 import type { CommunityPost } from "@/types";
 
-export function CommunityPostCard({ post }: { post: CommunityPost }) {
+export function CommunityPostCard({
+  post,
+  threadBase = "/community/post",
+}: {
+  post: CommunityPost;
+  /** Base path without trailing slash, e.g. `/tester/community/post`. */
+  threadBase?: string;
+}) {
   const layout = post.imageLayout ?? (post.imageUrls?.length === 3 ? "triple" : post.imageUrls?.length === 2 ? "double" : "single");
 
   return (
@@ -99,7 +106,7 @@ export function CommunityPostCard({ post }: { post: CommunityPost }) {
           Share
         </button>
         <Link
-          href={`/community/post/${post.id}`}
+          href={`${threadBase}/${post.id}`}
           className="ml-auto text-sm font-semibold text-violet-700 underline-offset-2 hover:text-violet-900 hover:underline"
         >
           Open thread

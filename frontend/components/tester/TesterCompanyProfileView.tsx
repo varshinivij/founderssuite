@@ -68,7 +68,7 @@ export default function TesterCompanyProfileView({ profile }: { profile: TesterC
             </p>
 
             <Link
-              href="/tester/feed"
+              href="/tester/matches"
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#fef6c3] via-[#fce8a6] to-[#f59e0b] px-8 py-3.5 text-base font-semibold text-[#2d1b4e] shadow-[0_8px_32px_rgba(234,179,8,0.35)] transition hover:brightness-[1.03] sm:w-auto sm:min-w-[280px]"
             >
               Start testing now

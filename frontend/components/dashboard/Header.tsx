@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, LayoutGrid, MessageSquare, Settings, Gauge, Inbox, Users } from "lucide-react";
+import { Menu, LayoutGrid, MessageSquare, Settings, Gauge, Users } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,17 +15,15 @@ export function Header({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const pathname = usePathname();
 
   const role = user?.role ?? "founder";
-  const counts = { feedback: 31 };
   const nav =
     role === "founder"
       ? [
           { href: "/founder/matches", label: "Matches", icon: <Gauge /> },
           { href: "/founder/dashboard", label: "Dashboard", icon: <LayoutGrid /> },
-          { href: "/founder/feedback", label: "Feedback", icon: <Inbox />, badge: counts.feedback },
           { href: "/founder/settings", label: "Settings", icon: <Settings /> },
         ]
       : [
-          { href: "/community", label: "Community", icon: <MessageSquare /> },
+          { href: "/tester/community", label: "Community", icon: <MessageSquare /> },
           { href: "/tester/matches", label: "Matches", icon: <LayoutGrid /> },
           { href: "/tester/profile", label: "Profile", icon: <Users /> },
         ];
@@ -64,14 +62,6 @@ export function Header({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
               >
                 <span className="[&_svg]:size-4">{item.icon}</span>
                 <span>{item.label}</span>
-                {"badge" in item && item.badge ? (
-                  <span className={cn(
-                    "ml-1 inline-flex items-center justify-center min-w-6 h-5 px-1.5 rounded-full text-[11px] font-semibold",
-                    active ? "bg-white/15 text-white" : "bg-black/5 text-[#3d1454]"
-                  )}>
-                    {item.badge}
-                  </span>
-                ) : null}
               </Link>
             );
           })}

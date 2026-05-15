@@ -98,13 +98,13 @@ async function run() {
       { key: AUTH_STORAGE_KEY, value: JSON.stringify(testerUser()) }
     );
 
-    await gotoAndShot(page, "/tester/feed", "30-tester-feed.png");
+    await gotoAndShot(page, "/tester", "30-tester-root.png");
     await gotoAndShot(page, "/tester/matches", "31-tester-matches.png");
     await gotoAndShot(page, "/tester/profile", "32-tester-profile.png");
     await gotoAndShot(page, "/tester/settings", "33-tester-settings.png");
-    await gotoAndShot(page, "/community", "15-community.png");
-    await gotoAndShot(page, "/community/SaaS", "16-community-domain-saas.png");
-    await gotoAndShot(page, "/community/post/post_1", "17-community-thread.png");
+    await gotoAndShot(page, "/tester/community", "15-community.png");
+    await gotoAndShot(page, "/tester/community/SaaS", "16-community-domain-saas.png");
+    await gotoAndShot(page, "/tester/community/post/post_1", "17-community-thread.png");
     await page.close();
   }
 
