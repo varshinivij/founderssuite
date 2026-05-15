@@ -2,7 +2,7 @@
 
 export function PricingSection() {
   return (
-    <section className="relative overflow-x-hidden px-6 py-16 md:py-20">
+    <section id="pricing" className="relative scroll-mt-32 overflow-x-hidden px-6 py-16 md:py-20">
       <div className="mx-auto max-w-[1100px]">
         <div className="rounded-2xl border border-slate-200/90 bg-white/95 p-10 shadow-[0_12px_48px_rgba(91,33,182,0.07)] backdrop-blur-sm md:p-12">
           <div>

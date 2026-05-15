@@ -33,7 +33,7 @@ export function TestSetupPreview() {
   const reduceMotion = usePrefersReducedMotion();
   const [phase, setPhase] = useState<DemoPhase>("form");
   const [title, setTitle] = useState("");
-  const [domain, setDomain] = useState("FinTech");
+  const [domain, setDomain] = useState("");
   const [stage, setStage] = useState("Seed Stage");
   const [comp, setComp] = useState<"commission" | "flat">("commission");
   const [budget, setBudget] = useState(63);
@@ -43,28 +43,13 @@ export function TestSetupPreview() {
 
   const company = useMemo(() => companyFromTitle(title), [title]);
 
-  const helper = useMemo(() => {
-    return {
-      title: "Define a test once — matched testers respond with structured feedback.",
-      comp:
-        comp === "flat"
-          ? "Faster completion, less churn."
-          : "Aligns incentives when outcomes matter.",
-      budget: "Higher budgets usually improve match quality.",
-    };
-  }, [comp]);
-
   const matchPctInt = Math.max(84, Math.min(98, Math.round(78 + budget / 6)));
   const matchScore = matchPctInt / 100;
 
   const caption = useMemo(() => {
-    if (phase === "form") {
-      return "AI ranks testers from your domain, incentives, and ratings.";
-    }
-    if (phase === "cards") {
-      return "You choose who to invite — skip or dig in on any suggestion.";
-    }
-    return "After rounds, get summaries and insights from testers and threads.";
+    if (phase === "form") return "";
+    if (phase === "cards") return "Choose testers to invite.";
+    return "Match quality from your setup.";
   }, [phase]);
 
   useEffect(() => {
@@ -77,58 +62,44 @@ export function TestSetupPreview() {
   const canFindMatches = title.trim().length >= 4;
 
   return (
-    <section className="relative overflow-x-hidden px-6 py-16 md:py-20">
+    <section id="setup" className="relative scroll-mt-32 overflow-x-hidden px-6 py-16 md:py-20">
       <div className="mx-auto flex max-w-[640px] flex-col items-center gap-4">
         <div className="relative w-full min-h-[min(50vh,420px)] sm:min-h-[400px]">
-          <div className="w-full rounded-xl border border-violet-200/90 bg-gradient-to-b from-violet-50/60 via-white to-white p-4 shadow-[0_14px_44px_rgba(91,33,182,0.14)] ring-1 ring-violet-500/15 backdrop-blur-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 border-l-[3px] border-[#8b5cf6] pl-3">
-                <div className="text-lg font-bold leading-tight text-slate-900">Test Setup</div>
-                <div className="mt-0.5 text-xs leading-snug text-slate-600">
-                  {helper.title}
-                </div>
-              </div>
-              <div className="hidden shrink-0 rounded-full border border-violet-300/90 bg-violet-100 px-2 py-1 text-[10px] font-semibold text-violet-900 shadow-sm sm:block">
-                Live demo
-              </div>
-            </div>
+          <div className="w-full rounded-2xl border border-violet-200/90 bg-white p-5 shadow-[0_10px_36px_rgba(91,33,182,0.08)] ring-1 ring-violet-500/10">
+            <div className="text-lg font-bold leading-tight text-slate-900">Test Setup</div>
 
-            <div className="mt-3 text-[9px] font-semibold uppercase tracking-widest text-violet-700">
-              TEST DETAILS
+            <div className="mt-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Test details
             </div>
-            <div className="mt-1">
+            <div className="mt-2 space-y-2">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. AudioNova Onboarding — Validation"
-                className="h-9 w-full rounded-md border border-violet-100 bg-white px-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6]/25"
+                className="h-11 w-full rounded-full border border-violet-200/90 bg-violet-50/40 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-300/30"
               />
-            </div>
-
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <div>
-                <div className="mb-1 text-[9px] font-semibold uppercase tracking-widest text-violet-700">
-                  Domain
-                </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <select
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
-                  className="h-9 w-full rounded-md border border-violet-100 bg-white px-2.5 text-sm text-slate-900 focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6]/25"
+                  className="h-11 w-full cursor-pointer appearance-none rounded-full border border-violet-200/90 bg-violet-50/40 bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat px-4 pr-9 text-sm text-slate-900 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-300/30"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                  }}
                 >
+                  <option value="">Domain</option>
                   <option>SaaS</option>
                   <option>FinTech</option>
                   <option>HealthTech</option>
                   <option>Consumer</option>
                 </select>
-              </div>
-              <div>
-                <div className="mb-1 text-[9px] font-semibold uppercase tracking-widest text-violet-700">
-                  Stage
-                </div>
                 <select
                   value={stage}
                   onChange={(e) => setStage(e.target.value)}
-                  className="h-9 w-full rounded-md border border-violet-100 bg-white px-2.5 text-sm text-slate-900 focus:border-violet-300 focus:outline-none focus:ring-2 focus:ring-[#8b5cf6]/25"
+                  className="h-11 w-full cursor-pointer appearance-none rounded-full border border-violet-200/90 bg-violet-50/40 bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat px-4 pr-9 text-sm text-slate-900 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-300/30"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+                  }}
                 >
                   <option>Idea</option>
                   <option>Pre-seed</option>
@@ -138,17 +109,17 @@ export function TestSetupPreview() {
               </div>
             </div>
 
-            <div className="mt-3 text-[9px] font-semibold uppercase tracking-widest text-violet-700">
-              COMPENSATION
+            <div className="mt-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Compensation
             </div>
-            <div className="mt-1.5 flex gap-2">
+            <div className="mt-2 flex gap-2">
               <button
                 type="button"
                 onClick={() => setComp("commission")}
-                className={`h-9 flex-1 rounded-md text-xs font-medium transition ${
+                className={`h-11 flex-1 rounded-full text-sm font-medium transition ${
                   comp === "commission"
-                    ? "border border-violet-400 bg-violet-100 text-violet-950 shadow-sm ring-1 ring-violet-300/40"
-                    : "border border-violet-100 text-slate-600 hover:border-violet-200 hover:bg-violet-50/60"
+                    ? "border-2 border-violet-400 bg-white text-slate-900 shadow-sm"
+                    : "border border-transparent bg-violet-50/50 text-slate-600 hover:bg-violet-50"
                 }`}
               >
                 Commission
@@ -156,68 +127,42 @@ export function TestSetupPreview() {
               <button
                 type="button"
                 onClick={() => setComp("flat")}
-                className={`h-9 flex-1 rounded-md text-xs font-medium transition ${
+                className={`h-11 flex-1 rounded-full text-sm font-medium transition ${
                   comp === "flat"
-                    ? "bg-[#8b5cf6] text-white shadow-md shadow-violet-500/25 hover:bg-[#7c3aed]"
-                    : "border border-violet-100 text-slate-600 hover:border-violet-200 hover:bg-violet-50/60"
+                    ? "border-2 border-violet-400 bg-white text-slate-900 shadow-sm"
+                    : "border border-transparent bg-violet-50/50 text-slate-600 hover:bg-violet-50"
                 }`}
               >
                 Flat Rate
               </button>
             </div>
-            <div className="mt-1 text-[10px] leading-snug text-slate-500">{helper.comp}</div>
 
-            <div className="mt-3 flex items-center justify-between gap-2">
-              <div className="text-[9px] font-semibold uppercase tracking-widest text-violet-700">
-                BUDGET
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Budget constraint
               </div>
-              <div className="text-sm font-semibold text-slate-900">{formatUSD(budget)}</div>
+              <div className="text-sm font-semibold tabular-nums text-slate-900">{formatUSD(budget)}</div>
             </div>
-            <div className="mt-1">
+            <div className="mt-2">
               <input
                 type="range"
                 min={10}
                 max={120}
                 value={budget}
                 onChange={(e) => setBudget(Number(e.target.value))}
-                className="h-1.5 w-full accent-[#8b5cf6]"
+                className="h-2 w-full cursor-pointer accent-violet-500"
               />
-              <div className="mt-0.5 text-[10px] text-slate-500">{helper.budget}</div>
             </div>
 
-            <div className="mt-3 rounded-lg border border-violet-200/80 bg-violet-50/50 px-3 py-2 ring-1 ring-violet-500/10">
-              <div className="text-[9px] font-semibold uppercase tracking-widest text-violet-700">
-                Summary
-              </div>
-              <div className="mt-1 text-xs leading-snug text-slate-800">
-                {title.trim().length ? title.trim() : "Untitled test"}{" "}
-                <span className="text-slate-400">•</span>{" "}
-                <span className="text-slate-600">{domain}</span>{" "}
-                <span className="text-slate-400">•</span>{" "}
-                <span className="text-slate-600">{stage}</span>{" "}
-                <span className="text-slate-400">•</span>{" "}
-                <span className="text-slate-600">
-                  {comp === "flat" ? "Flat rate" : "Commission"}
-                </span>{" "}
-                <span className="text-slate-400">•</span>{" "}
-                <span className="text-slate-600">{formatUSD(budget)} budget</span>
-              </div>
-            </div>
-
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="mt-6">
               <button
                 type="button"
                 disabled={!canFindMatches || phase !== "form"}
                 onClick={() => setPhase("cards")}
-                className="w-full rounded-full bg-[#e8c9a0] px-5 py-2 text-sm font-semibold text-[#1a0b2e] shadow-[0_0_20px_rgba(232,201,160,0.35)] ring-2 ring-[#8b5cf6]/20 transition hover:bg-[#f2a58e] disabled:pointer-events-none disabled:opacity-40 sm:w-auto"
+                className="h-11 w-full rounded-full bg-[#8b5cf6] px-5 text-sm font-semibold text-white shadow-md shadow-violet-500/20 transition hover:bg-[#7c3aed] disabled:pointer-events-none disabled:opacity-40"
               >
                 Find matches
               </button>
-              {phase === "form" ? (
-                <span className="text-[10px] text-slate-500">
-                  Title (4+ chars) to run demo.
-                </span>
-              ) : null}
             </div>
           </div>
 
@@ -271,7 +216,7 @@ export function TestSetupPreview() {
                       <div className="rounded-md bg-white/50 py-1.5">
                         <dt>Interest</dt>
                         <dd className="mt-0.5 text-[10px] font-bold leading-tight text-[#1a0b2e]">
-                          {domain}
+                          {domain || "—"}
                         </dd>
                       </div>
                     </dl>
@@ -369,11 +314,13 @@ export function TestSetupPreview() {
           </div>
         </div>
 
-        <p
-          className={`w-full text-center text-[11px] leading-snug text-slate-500 transition-opacity ${dur}`}
-        >
-          {caption}
-        </p>
+        {caption ? (
+          <p
+            className={`w-full text-center text-[11px] leading-snug text-slate-500 transition-opacity ${dur}`}
+          >
+            {caption}
+          </p>
+        ) : null}
       </div>
     </section>
   );

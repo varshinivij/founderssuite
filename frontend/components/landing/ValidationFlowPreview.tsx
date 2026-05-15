@@ -148,7 +148,7 @@ export function ValidationFlowPreview() {
         : "border-emerald-500/35 bg-emerald-500/10";
 
   return (
-    <section className="relative overflow-x-hidden">
+    <section id="validation" className="relative scroll-mt-32 overflow-x-hidden">
       <div className="mx-auto max-w-[1100px] px-6 py-16 md:py-20">
         <div className="mx-auto max-w-[800px]">
           <div className="flex flex-wrap justify-center gap-2">

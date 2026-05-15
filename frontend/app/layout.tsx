@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased ${jakarta.variable} ${plexMono.variable}`}
+      className={`h-full scroll-smooth antialiased ${jakarta.variable} ${plexMono.variable}`}
     >
       <body className="min-h-full flex flex-col fs-app-bg-light text-[#0a0a0f] font-sans">
         <Providers>{children}</Providers>

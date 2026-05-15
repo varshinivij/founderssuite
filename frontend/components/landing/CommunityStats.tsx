@@ -89,7 +89,7 @@ export function CommunityStats() {
   ];
 
   return (
-    <section className="relative overflow-x-hidden">
+    <section id="community" className="relative scroll-mt-32 overflow-x-hidden">
       <div className="mx-auto max-w-[1100px] px-6 py-16 md:py-20">
         <div className="text-center">
           <div className="text-2xl font-semibold italic text-violet-700">

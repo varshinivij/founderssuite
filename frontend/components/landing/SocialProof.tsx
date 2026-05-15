@@ -10,7 +10,7 @@ export function SocialProof() {
   const logos = ["MINKO", "PIXEL", "MERIDIAN", "Savory", "Terranove", "AUA"];
 
   return (
-    <section className="relative overflow-x-hidden">
+    <section id="stories" className="relative scroll-mt-32 overflow-x-hidden">
       <div className="relative mx-auto max-w-[1100px] px-6 py-16 md:py-20">
         <h2 className="text-center text-[32px] font-extrabold text-slate-900">
           Founders love what we do.
