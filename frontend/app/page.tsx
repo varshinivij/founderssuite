@@ -3,10 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { HeroSectionV2 } from "@/components/landing/HeroSectionV2";
-import { TestSetupPreview } from "@/components/landing/TestSetupPreview";
 import { ValidationFlowPreview } from "@/components/landing/ValidationFlowPreview";
-import { SocialProof } from "@/components/landing/SocialProof";
-import { CommunityStats } from "@/components/landing/CommunityStats";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { FAQSection } from "@/components/landing/FAQSection";
 
@@ -96,10 +93,7 @@ export default function LandingPage() {
       </div>
 
       <div className="relative z-10 bg-white">
-        <TestSetupPreview />
         <ValidationFlowPreview />
-        <SocialProof />
-        <CommunityStats />
         <PricingSection />
         <FAQSection />
       </div>

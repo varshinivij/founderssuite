@@ -5,10 +5,7 @@ import { RoleToggle } from "@/components/landing/RoleToggle";
 
 const LANDING_TOC = [
   { href: "#overview", label: "Overview" },
-  { href: "#setup", label: "Test setup" },
   { href: "#validation", label: "Validation" },
-  { href: "#stories", label: "Stories" },
-  { href: "#community", label: "Community" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
 ] as const;
