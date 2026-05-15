@@ -59,6 +59,7 @@ export const mockTesterProfiles: TesterProfile[] = [
     industryInterests: ["MedTech", "Health"],
     qualityScore: 4.9,
     projectsTested: 11,
+    totalTestingHours: 168,
     previousCompany: "AudioNova",
     isTopVoice: true,
     tags: ["Clinical Ops", "Regulatory", "User Research"],
@@ -99,6 +100,7 @@ export const mockTesterProfiles: TesterProfile[] = [
     industryInterests: ["SaaS", "FinTech"],
     qualityScore: 4.7,
     projectsTested: 28,
+    totalTestingHours: 214,
     previousCompany: "BrightApps",
     isTopVoice: false,
     tags: ["Sales Ops", "GTM", "Pricing"],
@@ -127,6 +129,7 @@ export const mockTesterProfiles: TesterProfile[] = [
     industryInterests: ["EdTech"],
     qualityScore: 4.8,
     projectsTested: 15,
+    totalTestingHours: 96,
     previousCompany: null,
     isTopVoice: true,
     tags: ["Curriculum", "Procurement", "UX Feedback"],
@@ -155,6 +158,7 @@ export const mockTesterProfiles: TesterProfile[] = [
     industryInterests: ["FinTech", "SaaS"],
     qualityScore: 4.6,
     projectsTested: 22,
+    totalTestingHours: 188,
     previousCompany: null,
     isTopVoice: false,
     tags: ["Payments", "Risk", "Compliance"],
@@ -183,6 +187,7 @@ export const mockTesterProfiles: TesterProfile[] = [
     industryInterests: ["VehicleTech"],
     qualityScore: 4.6,
     projectsTested: 9,
+    totalTestingHours: 74,
     previousCompany: null,
     isTopVoice: false,
     tags: ["Field Ops", "Hardware", "Installation"],
@@ -216,6 +221,7 @@ export const mockTesterProfiles: TesterProfile[] = [
       industryInterests: ["SaaS", "Other"],
       qualityScore: 4.2 + (i % 4) * 0.2,
       projectsTested: 5 + i * 2,
+      totalTestingHours: Math.round(24 + (5 + i * 2) * 8 + i * 14),
       previousCompany: null,
       isTopVoice: i % 5 === 0,
       tags: ["Research", "Communication", "Domain Knowledge"],
@@ -317,10 +323,11 @@ export const mockForms: ValidationForm[] = Array.from({ length: 6 }).map(
   })
 );
 
-export const mockMatches: Match[] = Array.from({ length: 9 }).map((_, i) => {
+export const mockMatches: Match[] = Array.from({ length: 15 }).map((_, i) => {
   const tester = mockTesterProfiles[i % mockTesterProfiles.length];
   const form = mockForms[i % mockForms.length];
-  const score = [0.97, 0.91, 0.86, 0.82, 0.78, 0.74, 0.69, 0.63, 0.6][i];
+  const scorePool = [0.97, 0.91, 0.86, 0.82, 0.78, 0.74, 0.69, 0.63, 0.58, 0.55];
+  const score = Math.max(0.52, scorePool[i % scorePool.length]! - (i % 5) * 0.015);
   return {
     id: `match_${i + 1}`,
     agentId: mockAgents[0].id,

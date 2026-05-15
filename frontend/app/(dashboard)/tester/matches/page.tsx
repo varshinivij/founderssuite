@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { DollarSign, FileCheck, Star } from "lucide-react";
+import { FileCheck, Star } from "lucide-react";
 import { mockMatches } from "@/lib/mock-data";
 import { getTesterCompanyProfile } from "@/lib/tester-company-profiles";
 import { MatchCircle } from "@/components/shared/MatchCircle";
@@ -29,8 +29,6 @@ export default function TesterMatchesPage() {
         matchPct: Math.round(m.score * 100),
         minScore: (m.tester?.qualityScore ?? 4.0) as number,
         stage: m.form?.stage ?? ["Pre", "Post", "Seed"][idx % 3],
-        rate: `$${m.tester?.hourlyRate ?? [32, 45, 28][idx % 3]}/hr`,
-        payType: idx % 2 === 0 ? "Flat Rate" : "Hourly",
         tags: ["Problem Validation", "Concept Prototyping", "Beta Testing", "UX", "US, UK"].slice(0, 4),
         status: m.status,
       };
@@ -99,7 +97,7 @@ export default function TesterMatchesPage() {
             >
               <option>Match Score</option>
               <option>Newest</option>
-              <option>Compensation</option>
+              <option>Company</option>
             </select>
           </div>
         </div>
@@ -129,7 +127,7 @@ export default function TesterMatchesPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
                   {[
                     {
                       label: "Quality score",
@@ -150,15 +148,6 @@ export default function TesterMatchesPage() {
                           <span className="text-sm font-extrabold leading-tight text-[#2d1b4e]">
                             {r.stage}
                           </span>
-                        </>
-                      ),
-                    },
-                    {
-                      label: r.payType,
-                      node: (
-                        <>
-                          <DollarSign className="h-3.5 w-3.5 text-[#6d28d9]" />
-                          <span className="text-lg font-extrabold text-[#2d1b4e]">{r.rate}</span>
                         </>
                       ),
                     },

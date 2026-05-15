@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, LayoutGrid, Users, MessageSquare, DollarSign, Settings } from "lucide-react";
+import { Menu, LayoutGrid, MessageSquare, Settings, Gauge, Inbox, Users } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,14 @@ export function Header({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   const pathname = usePathname();
 
   const role = user?.role ?? "founder";
-  const counts = { manage: 42, feedback: 31 };
+  const counts = { feedback: 31 };
   const nav =
     role === "founder"
       ? [
-          { href: "/founder/dashboard", label: "Overview", icon: <LayoutGrid /> },
-          { href: "/founder/forms", label: "Manage Testers", icon: <Users />, badge: counts.manage },
-          { href: "/founder/feedback", label: "Feedback", icon: <MessageSquare />, badge: counts.feedback },
-          { href: "/founder/commission", label: "Commission", icon: <DollarSign /> },
+          { href: "/community", label: "Community", icon: <MessageSquare /> },
+          { href: "/founder/matches", label: "Matches", icon: <Gauge /> },
+          { href: "/founder/dashboard", label: "Dashboard", icon: <LayoutGrid /> },
+          { href: "/founder/feedback", label: "Feedback", icon: <Inbox />, badge: counts.feedback },
           { href: "/founder/settings", label: "Settings", icon: <Settings /> },
         ]
       : [

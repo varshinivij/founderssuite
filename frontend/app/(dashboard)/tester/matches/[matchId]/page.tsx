@@ -47,7 +47,7 @@ export default function TesterMatchDetailPage() {
                   <span className="text-slate-400"> · </span>
                 </>
               ) : null}
-              {form.stage ?? "—"} • ${form.compensation ?? 0}
+              {form.stage ?? "—"}
             </p>
           </div>
         </div>

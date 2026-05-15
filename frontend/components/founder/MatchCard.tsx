@@ -1,6 +1,6 @@
 "use client";
 
-import { DollarSign, FlaskConical, Star } from "lucide-react";
+import { FlaskConical, Star } from "lucide-react";
 import type { Match } from "@/types";
 import { MatchCircle } from "@/components/shared/MatchCircle";
 
@@ -56,7 +56,7 @@ export function MatchCard({
         <MatchCircle score={score} size={76} />
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
+      <div className="grid grid-cols-2 gap-2 text-center">
         <div className="bg-[#1a1a2e] rounded-lg py-2 px-1">
           <div className="flex items-center justify-center gap-1 text-yellow-400 mb-0.5">
             <Star size={12} className="fill-yellow-400 text-yellow-400" />
@@ -74,15 +74,6 @@ export function MatchCard({
             </span>
           </div>
           <p className="text-[#a8a9ad] text-[10px]">Products Tested</p>
-        </div>
-        <div className="bg-[#1a1a2e] rounded-lg py-2 px-1">
-          <div className="flex items-center justify-center gap-1 text-[#a78bfa] mb-0.5">
-            <DollarSign size={12} />
-            <span className="text-white font-bold text-sm">
-              ${tester?.hourlyRate ?? "—"}/hr
-            </span>
-          </div>
-          <p className="text-[#a8a9ad] text-[10px]">Compensation</p>
         </div>
       </div>
 

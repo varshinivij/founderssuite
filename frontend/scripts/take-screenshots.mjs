@@ -81,7 +81,7 @@ async function run() {
     );
 
     await gotoAndShot(page, "/founder/dashboard", "10-founder-dashboard.png");
-    await gotoAndShot(page, "/founder/forms", "11-founder-forms.png");
+    await gotoAndShot(page, "/founder/matches", "11-founder-matches.png");
     await gotoAndShot(page, "/founder/forms/new", "12-founder-forms-new.png");
     await gotoAndShot(page, "/founder/profile", "13-founder-profile.png");
     await gotoAndShot(page, "/founder/settings", "14-founder-settings.png");

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { mockFounderProfile } from "@/lib/mock-data";
-import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function FounderProfilePage() {
   const [profile, setProfile] = useState(mockFounderProfile);
@@ -13,18 +13,18 @@ export default function FounderProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-          Founder profile
-        </h1>
-        <p className="mt-1 text-sm text-neutral-text-gray">
-          Configure what testers see and what you’re looking for.
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">Founder profile</h1>
+        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
+          Configure what testers see and what you&apos;re looking for.
         </p>
       </div>
 
-      <Card className="bg-bg-accent border-divider shadow-card p-6 space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
           <div className="space-y-2">
-            <Label htmlFor="companyName">Company name</Label>
+            <Label htmlFor="companyName" className="text-slate-700">
+              Company name
+            </Label>
             <Input
               id="companyName"
               value={profile.companyName}
@@ -32,7 +32,9 @@ export default function FounderProfilePage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="productDemoUrl">Product demo URL</Label>
+            <Label htmlFor="productDemoUrl" className="text-slate-700">
+              Product demo URL
+            </Label>
             <Input
               id="productDemoUrl"
               value={profile.productDemoUrl ?? ""}
@@ -41,30 +43,43 @@ export default function FounderProfilePage() {
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="companyDescription">Description</Label>
-            <Input
+            <Label htmlFor="companyDescription" className="text-slate-700">
+              Description
+            </Label>
+            <textarea
               id="companyDescription"
               value={profile.companyDescription}
-              onChange={(e) =>
-                setProfile({ ...profile, companyDescription: e.target.value })
-              }
+              onChange={(e) => setProfile({ ...profile, companyDescription: e.target.value })}
+              rows={3}
+              className={cn(
+                "min-h-[88px] w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none",
+                "placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+              )}
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="lookingFor">What you’re looking for</Label>
-            <Input
+            <Label htmlFor="lookingFor" className="text-slate-700">
+              What you&apos;re looking for
+            </Label>
+            <textarea
               id="lookingFor"
               value={profile.lookingFor}
               onChange={(e) => setProfile({ ...profile, lookingFor: e.target.value })}
+              rows={3}
+              className={cn(
+                "min-h-[88px] w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none",
+                "placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+              )}
             />
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Button className="bg-purple hover:bg-purple-mid">Save (mock)</Button>
+        <div className="mt-6 flex justify-end border-t border-slate-100 pt-5">
+          <Button type="button" className="bg-[#8b5cf6] text-white hover:bg-[#7c3aed]">
+            Save (mock)
+          </Button>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
-

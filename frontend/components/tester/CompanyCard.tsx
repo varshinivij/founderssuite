@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { DollarSign, Eye, FileCheck, Star } from "lucide-react";
+import { Eye, FileCheck, Star } from "lucide-react";
 import { MatchCircle } from "@/components/shared/MatchCircle";
 import { TesterCompanyLogoMark } from "@/components/tester/TesterCompanyLogoMark";
 import { getTesterCompanyProfile } from "@/lib/tester-company-profiles";
@@ -53,7 +53,7 @@ export function CompanyCard({
                 <p className="mt-0.5 text-[13px] leading-snug text-[#6b5f80]">{form.title}</p>
               ) : null}
               <p className="mt-1 text-sm leading-snug text-[#5c4d75]">
-                {form.stage ?? "Seed"} validation • ${form.compensation ?? 0} stipend
+                {form.stage ?? "Seed"} validation
                 {form.founder?.companyName ? (
                   <>
                     {" "}
@@ -69,7 +69,7 @@ export function CompanyCard({
 
           <p className="text-sm leading-relaxed text-[#4a3f66]">{form.description}</p>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <div className="rounded-2xl border border-[#d4c4ec] bg-[#e6dff1] px-2 py-3 text-center shadow-sm sm:px-3">
               <div className="mb-1 flex items-center justify-center gap-1 text-[#6d28d9]">
                 <Star className="h-3.5 w-3.5 fill-[#c4b5fd] text-[#6d28d9]" />
@@ -86,15 +86,6 @@ export function CompanyCard({
               </div>
               <p className="text-[10px] font-medium uppercase tracking-wide text-[#5c4d75]">
                 Signals
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#d4c4ec] bg-[#e6dff1] px-2 py-3 text-center shadow-sm sm:px-3">
-              <div className="mb-1 flex items-center justify-center gap-1 text-[#6d28d9]">
-                <DollarSign className="h-3.5 w-3.5" />
-                <span className="text-sm font-extrabold text-[#2d1b4e]">${form.compensation ?? 0}</span>
-              </div>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-[#5c4d75]">
-                Offer
               </p>
             </div>
           </div>

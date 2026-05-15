@@ -54,6 +54,8 @@ export interface TesterProfile extends User {
   industryInterests: string[];
   qualityScore: number;
   projectsTested: number;
+  /** Cumulative validation / beta hours on the platform (demo). */
+  totalTestingHours: number;
   bio: string;
   previousCompany?: string | null;
   isTopVoice?: boolean;
