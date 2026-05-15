@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+keras
+tensorflow
+numpy
+requests
+python-dotenv
+python-jose[cryptography]
+supabase
+postgrest
+pydantic

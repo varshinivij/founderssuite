@@ -42,9 +42,14 @@ router.post("/", async (req, res) => {
   return res.status(201).json({ form, matchesTriggered: matches.length });
 });
 
-// ── List open forms ───────────────────────────────────────────────────────────
+// ── List forms — optionally filtered by founderId ────────────────────────────
+// GET /forms              → all open forms (marketplace view)
+// GET /forms?founderId=xx → only this founder's forms
 router.get("/", (req, res) => {
-  const forms = [...db.forms.values()].filter((f) => f.status === "open");
+  const { founderId } = req.query;
+  const forms = [...db.forms.values()].filter((f) =>
+    founderId ? f.founderId === founderId : f.status === "open"
+  );
   return res.json(forms);
 });
 
@@ -64,11 +69,68 @@ router.post("/:id/close", (req, res) => {
   return res.json(form);
 });
 
-// ── Get all submissions for a form ────────────────────────────────────────────
+// ── Pending human-tester matches for a form (founder tinder queue) ────────────
+router.get("/:id/pending-testers", (req, res) => {
+  const form = db.forms.get(req.params.id);
+  if (!form) return res.status(404).json({ error: "Form not found" });
+
+  const pending = [...db.matches.values()]
+    .filter((m) => m.formId === req.params.id && m.status === "pending")
+    .map((m) => {
+      const agent = db.agents.get(m.agentId);
+      if (!agent || agent.type !== "human") return null;
+      const user = db.users.get(agent.userId);
+      const story = db.stories.get(agent.storyId);
+      return {
+        matchId: m.id,
+        score: m.score,
+        createdAt: m.createdAt,
+        tester: user ? {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          domain: story?.tags?.[0] ?? "general",
+          skills: (story?.tags ?? []).map((t) => t.charAt(0).toUpperCase() + t.slice(1)),
+          bio: story?.description?.slice(0, 160) ?? "",
+          qualityScore: Math.round((m.score * 5 + Number.EPSILON) * 10) / 10,
+          projectsTested: agent.filledForms,
+        } : undefined,
+      };
+    })
+    .filter(Boolean);
+
+  return res.json(pending);
+});
+
+// ── Get all submissions for a form (enriched with tester profile + form) ──────
 router.get("/:id/submissions", (req, res) => {
-  const submissions = [...db.matches.values()].filter(
-    (m) => m.formId === req.params.id && m.status === "submitted"
-  );
+  const form = db.forms.get(req.params.id);
+  const submissions = [...db.matches.values()]
+    .filter((m) => m.formId === req.params.id && m.status === "submitted")
+    .map((m) => {
+      const agent = db.agents.get(m.agentId);
+      const user = agent ? db.users.get(agent.userId) : undefined;
+      const story = agent ? db.stories.get(agent.storyId) : undefined;
+      return {
+        ...m,
+        form,
+        tester: user
+          ? {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: "tester" as const,
+              createdAt: user.createdAt,
+              domain: story?.tags?.[0] ?? "general",
+              livedExperience: story?.description ?? "",
+              skills: (story?.tags ?? []).map((t) => t.charAt(0).toUpperCase() + t.slice(1)),
+              qualityScore: Math.round((m.score * 5 + Number.EPSILON) * 10) / 10,
+              projectsTested: agent?.filledForms ?? 0,
+              bio: story?.description?.slice(0, 140) ?? "",
+            }
+          : undefined,
+      };
+    });
   return res.json(submissions);
 });
 

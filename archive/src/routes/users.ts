@@ -26,11 +26,23 @@ router.post("/", (req, res) => {
   return res.status(201).json(user);
 });
 
-// ── Get user ──────────────────────────────────────────────────────────────────
+// ── Get user by ID ────────────────────────────────────────────────────────────
 router.get("/:id", (req, res) => {
   const user = db.users.get(req.params.id);
   if (!user) return res.status(404).json({ error: "User not found" });
   return res.json(user);
+});
+
+// ── Look up or create user by email (used for demo login) ─────────────────────
+router.post("/login", (req, res) => {
+  const { email, name } = req.body as { email?: string; name?: string };
+  if (!email) return res.status(400).json({ error: "email required" });
+  const existing = [...db.users.values()].find((u) => u.email === email);
+  if (existing) return res.json(existing);
+  // Auto-create if not found
+  const user = { id: uuidv4(), email, name: name ?? email.split("@")[0], createdAt: new Date().toISOString() };
+  db.users.set(user.id, user);
+  return res.status(201).json(user);
 });
 
 // ── Add story / experience / problem ─────────────────────────────────────────
@@ -41,6 +53,8 @@ const AddStorySchema = z.object({
   title: z.string().min(1),
   description: z.string().min(10),
   tags: z.array(z.string()).default([]),
+  // "self" = founder agent (fills own forms only); "public" = tester agent (fills any matching form)
+  agentScope: z.enum(["self", "public"]).default("public"),
 });
 
 router.post("/:id/stories", (req, res) => {
@@ -50,16 +64,18 @@ router.post("/:id/stories", (req, res) => {
   const parsed = AddStorySchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
+  const { agentScope, ...storyData } = parsed.data;
   const story: UserStory = {
     id: uuidv4(),
     userId: user.id,
-    ...parsed.data,
+    ...storyData,
     createdAt: new Date().toISOString(),
   };
   db.stories.set(story.id, story);
 
-  // Auto-create agent for this story (payment already verified by x402 middleware)
-  const agent = createAgent(story);
+  // "self" scope agents are AI type; "public" scope defaults to human (testers override to ai in seed)
+  const agentType = agentScope === "self" ? "ai" : "human";
+  const agent = createAgent(story, agentType, agentScope);
 
   return res.status(201).json({ story, agent });
 });

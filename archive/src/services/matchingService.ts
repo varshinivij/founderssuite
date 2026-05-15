@@ -1,11 +1,5 @@
 /**
  * matchingService — scans open ValidationForms against all active agents.
- *
- * Flow:
- *  1. A founder posts a ValidationForm
- *  2. matchingService runs (on form creation + on a polling interval)
- *  3. For each active agent, a relevance score is computed
- *  4. Matches above threshold are handed to formFillerService
  */
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db.js";
@@ -13,30 +7,42 @@ import { fillAndSubmitForm } from "./formFillerService.js";
 import { agentDecide } from "../ml/rlTrainer.js";
 import type { Match, ValidationForm, Agent } from "../types/index.js";
 
-const MATCH_THRESHOLD = 0.55;
+const MATCH_THRESHOLD = 0.30; // agent-coverage score: must cover ≥30% of agent's criteria tokens
 
-/**
- * Run matching for a single form against all active agents.
- * Call this whenever a new form is created.
- */
 export async function matchFormToAgents(form: ValidationForm): Promise<Match[]> {
-  const activeAgents = [...db.agents.values()].filter(
-    (a) => a.status === "active"
-  );
+  const activeAgents = [...db.agents.values()].filter((a) => a.status === "active");
   const created: Match[] = [];
 
   for (const agent of activeAgents) {
+    // "self" scope agents only fill their own founder's forms
+    if (agent.scope === "self" && agent.userId !== form.founderId) continue;
+
     const score = scoreRelevance(agent, form);
     if (score < MATCH_THRESHOLD) continue;
 
-    // Avoid duplicate matches
     const alreadyMatched = [...db.matches.values()].some(
       (m) => m.agentId === agent.id && m.formId === form.id
     );
     if (alreadyMatched) continue;
 
-    // RL policy decision: should the agent submit, skip, or request more context?
-    const decision = agentDecide(agent.id, score);
+    // Human agents surface as pending matches for the founder to review — no auto-fill
+    if (agent.type === "human") {
+      const match: Match = {
+        id: uuidv4(),
+        agentId: agent.id,
+        userId: agent.userId,
+        formId: form.id,
+        score,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+      db.matches.set(match.id, match);
+      created.push(match);
+      continue;
+    }
+
+    // AI agents: matches above 0.33 always submit — DQN Q-values are random on fresh start
+    const decision = score >= 0.33 ? "SUBMIT" : agentDecide(agent.id, score);
     if (decision === "SKIP") continue;
 
     const match: Match = {
@@ -52,26 +58,34 @@ export async function matchFormToAgents(form: ValidationForm): Promise<Match[]> 
     created.push(match);
 
     if (decision === "SUBMIT") {
-      // Fire-and-forget: let the agent fill the form
       fillAndSubmitForm(match, agent, form).catch(console.error);
     }
-    // REQUEST_MORE_CONTEXT leaves match in "pending" — user notified to add more story detail
   }
 
   return created;
 }
 
 /**
- * Simple keyword overlap score — replace with an LLM embedding
- * similarity call (e.g. text-embedding-3-small cosine distance) in prod.
+ * Agent-coverage score: fraction of agent criteria tokens found in form text.
+ * Applies basic suffix-stripping so "teachers"/"teacher", "students"/"student" match.
  */
 function scoreRelevance(agent: Agent, form: ValidationForm): number {
-  const agentTokens = tokenize(agent.matchCriteria);
-  const formTokens = tokenize(`${form.title} ${form.description} ${form.targetProfile}`);
-
-  const overlap = agentTokens.filter((t) => formTokens.includes(t)).length;
+  const agentTokens = tokenize(agent.matchCriteria).map(stem);
   if (agentTokens.length === 0) return 0;
-  return Math.min(overlap / agentTokens.length, 1);
+
+  const formText = `${form.title} ${form.description} ${form.targetProfile} ${
+    form.questions.map((q) => q.question).join(" ")
+  }`;
+  const formTokens = new Set(tokenize(formText).map(stem));
+
+  const overlap = agentTokens.filter((t) => formTokens.has(t)).length;
+  return overlap / agentTokens.length;
+}
+
+/** Strip trailing "s" so plural/singular forms match (teachers↔teacher, students↔student). */
+function stem(word: string): string {
+  if (word.length > 4 && word.endsWith("s") && !word.endsWith("ss")) return word.slice(0, -1);
+  return word;
 }
 
 function tokenize(text: string): string[] {
@@ -79,5 +93,18 @@ function tokenize(text: string): string[] {
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, "")
     .split(/\s+/)
-    .filter((t) => t.length > 3);
+    .filter((t) => t.length > 2 && !STOPWORDS.has(t));
 }
+
+const STOPWORDS = new Set([
+  "the", "and", "for", "are", "but", "not", "you", "all", "any", "can",
+  "had", "her", "was", "one", "our", "out", "day", "get", "has", "him",
+  "his", "how", "its", "may", "new", "now", "old", "see", "two", "who",
+  "did", "she", "use", "way", "will", "with", "this", "that", "from",
+  "have", "been", "what", "your", "they", "more", "very", "when", "come",
+  "here", "just", "know", "like", "make", "over", "such", "take", "than",
+  "them", "then", "time", "well", "were", "about", "their", "there",
+  "would", "could", "which", "also", "some", "into", "most", "other",
+  "people", "years", "first", "last", "long", "great", "little", "own",
+  "right", "look", "going", "being", "doing", "early", "stage",
+]);

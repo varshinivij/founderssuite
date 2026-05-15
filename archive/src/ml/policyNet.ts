@@ -164,6 +164,18 @@ export function getWeightsSummary(agentId: string) {
   return { steps: w.steps, epsilon: w.epsilon };
 }
 
+/**
+ * Pre-seed an agent's policy with known epsilon/steps so restarts don't reset
+ * trained agents to full random exploration.
+ */
+export function seedAgentPolicy(agentId: string, epsilon: number, steps: number): void {
+  if (agentWeights.has(agentId)) return; // already initialized this session
+  const w = initWeights();
+  w.epsilon = Math.max(EPSILON_MIN, Math.min(1.0, epsilon));
+  w.steps = steps;
+  agentWeights.set(agentId, w);
+}
+
 export function actionIndex(action: Action): number {
   return ACTIONS.indexOf(action);
 }

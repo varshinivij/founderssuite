@@ -14,20 +14,35 @@ import type { Agent, UserStory } from "../types/index.js";
  * Spin up a new agent for a given story.
  * Called after x402 payment is confirmed.
  */
-export function createAgent(story: UserStory): Agent {
+export function createAgent(
+  story: UserStory,
+  type: "ai" | "human" = "human",
+  scope: "self" | "public" = "public"
+): Agent {
   const agent: Agent = {
     id: uuidv4(),
     userId: story.userId,
     storyId: story.id,
     name: `Agent for "${story.title}"`,
     status: "active",
+    type,
+    scope,
     matchCriteria: buildMatchCriteria(story),
     filledForms: 0,
+    successRate: 0,
+    policy: { trained: false, steps: 0, epsilon: 1.0 },
     createdAt: new Date().toISOString(),
     lastActiveAt: new Date().toISOString(),
   };
   db.agents.set(agent.id, agent);
   return agent;
+}
+
+export function computeSuccessRate(agentId: string): number {
+  const matches = [...db.matches.values()].filter((m) => m.agentId === agentId);
+  if (matches.length === 0) return 0;
+  const accepted = matches.filter((m) => m.status === "submitted").length;
+  return accepted / matches.length;
 }
 
 /**

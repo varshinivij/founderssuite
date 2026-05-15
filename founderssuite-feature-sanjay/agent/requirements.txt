@@ -1,0 +1,5 @@
+livekit-agents[silero]>=1.0
+livekit-plugins-deepgram
+python-dotenv
+supabase
+httpx

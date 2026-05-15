@@ -22,9 +22,14 @@ export interface Agent {
   storyId: string;
   name: string;
   status: "active" | "paused" | "stopped";
-  // Summary of what the agent monitors for — derived from the user's story
+  // "ai" agents auto-fill forms; "human" agents wait for founder invite
+  type: "ai" | "human";
+  // "self" = founder agent, fills only their own forms; "public" = tester agent, fills any matching form
+  scope: "self" | "public";
   matchCriteria: string;
   filledForms: number;
+  successRate: number;
+  policy: { trained: boolean; steps: number; epsilon: number };
   createdAt: string;
   lastActiveAt: string;
 }
@@ -56,7 +61,11 @@ export interface Match {
   userId: string;
   formId: string;
   score: number; // 0–1 relevance score
-  status: "pending" | "submitted" | "rejected";
+  // pending = awaiting founder review (human agents only)
+  // invited = founder accepted, waiting for tester to fill
+  // submitted = tester filled and submitted
+  // rejected = declined by founder or tester
+  status: "pending" | "invited" | "submitted" | "rejected";
   agentAnswers?: Record<string, string>; // questionId -> answer
   submittedAt?: string;
   createdAt: string;
